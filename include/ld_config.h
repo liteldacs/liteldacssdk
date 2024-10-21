@@ -67,7 +67,7 @@ typedef struct config_s {
 
 
     /* role tags */
-    uint8_t ua;
+    uint32_t UA;
     uint8_t ua_gsc; /* temporary, currently for gs */
 
     /* security configurations */
@@ -79,9 +79,9 @@ typedef struct config_s {
 
     /* log */
     char log_dir[1024];
-} ld_config_t;
+} config_t;
 
-extern ld_config_t config;
+extern config_t config;
 
 /* Prototypes --------------------------------------------------------- */
 

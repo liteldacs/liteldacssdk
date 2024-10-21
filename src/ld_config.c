@@ -4,16 +4,18 @@
 
 #include "ld_config.h"
 
-ld_config_t config = {
-    .port = 8081,
-    .debug = FALSE,
-    .timeout = 30,
-    .worker = 4,
-    .ip_ver = IPVERSION_4,
-    .init_fl_freq = 960.0,
-    .log_dir = "../../log",
-    .use_http = FALSE,
-    .auto_auth = TRUE,
+
+config_t config = {
+        .port = 8081,
+        .debug = FALSE,
+        .timeout = 30,
+        .worker = 4,
+        .ip_ver = IPVERSION_4,
+        .init_fl_freq = 960.0,
+        .log_dir = "../../log",
+        .use_http = FALSE,
+        .auto_auth = TRUE,
+        .UA = 0,
 };
 
 
@@ -96,6 +98,7 @@ void to_data(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yam
 
     /* Dictionary */
     char *role = "role";
+    char *ua = "UA";
     char *port = "port";
     char *debug = "debug";
     char *init_fl_freq = "init_fl_freq";
@@ -120,6 +123,10 @@ void to_data(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yam
             clean_prs(fp, parser, event);
             exit(EXIT_FAILURE);
         }
+    } else if (!strcmp(buf, ua)) {
+        yaml_event_delete(event);
+        parse_next(parser, event);
+        config.UA = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(buf, port)) {
         yaml_event_delete(event);
         parse_next(parser, event);
