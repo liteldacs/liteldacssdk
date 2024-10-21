@@ -21,4 +21,15 @@ int32_t memrchr(const buffer_t *buf, uint8_t target);
 
 int bytes_len(size_t n);
 
+#define UA_STR(name) char (name)[11] = {0}
+
+static char *get_ua_str(uint32_t value, char *str) {
+    if (value >= (1 << UALEN)) return NULL;
+    sprintf(str, "%09d", value);
+    return str;
+}
+
+
+
+
 #endif //LD_UTILS_H

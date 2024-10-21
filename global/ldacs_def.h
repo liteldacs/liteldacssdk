@@ -79,6 +79,8 @@ typedef enum {
     LD_ERR_FAIL_EXEC_SQL,
 } l_err;
 
+#define UALEN 28
+
 #define IPVERSION_4 4
 #define IPVERSION_6 6
 
