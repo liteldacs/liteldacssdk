@@ -27,6 +27,7 @@ typedef enum {
     LD_ERR_NOMEM,
     LD_ERR_THREAD,
     LD_ERR_QUEUE,
+    LD_ERR_NULL,
     LD_ERR_KEY,
 
     /*================= for statemachine ====================*/

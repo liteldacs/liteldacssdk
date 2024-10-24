@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD 11)
 add_compile_definitions(LOG_USE_COLOR)
 
 AUX_SOURCE_DIRECTORY(. SRC_LIST) #把当前目录(.)下所有源代码文件和头文件加入变量SRC_LIST
-add_library(${PROJECT_NAME} SHARED ${SRC_LIST})
+add_library(${PROJECT_NAME} STATIC ${SRC_LIST})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/global)

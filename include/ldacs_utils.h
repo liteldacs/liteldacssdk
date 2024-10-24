@@ -27,5 +27,6 @@
 #include "ld_file.h"
 #include "ld_mqueue.h"
 #include "ld_drr.h"
+#include "ld_window.h"
 #include "ld_utils.h"
 #endif //LDACS_UTILS_H
