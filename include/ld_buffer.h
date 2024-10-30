@@ -13,7 +13,7 @@ typedef struct buffer_s {
     size_t len; /* used space length in buf */
     size_t total;
     size_t free;
-    bool ptr_null;
+    // bool ptr_null;
     uint8_t *ptr; /* store data */
 } buffer_t;
 
@@ -53,7 +53,7 @@ l_err change_buffer_len(buffer_t *buf, size_t valid_len);
         (ch).free = 0;                                                  \
         (ch).len  = (size);                                               \
         (ch).total  = (size);\
-        (ch).ptr_null = FALSE;\
+        /* (ch).ptr_null = FALSE; */\
     }
 
 //有最大值的按长度克隆
@@ -63,14 +63,14 @@ l_err change_buffer_len(buffer_t *buf, size_t valid_len);
         (ch).len = (size);                                                \
         (ch).free = (total_len) - (size);                                   \
         (ch).total = (total_len);                                         \
-        (ch).ptr_null = FALSE;\
+        /* (ch).ptr_null = FALSE; */\
     }
 
 //根据静态buffer克隆（按长度）
 #define CLONE_BY_BUFFER(ch, buf) \
     {                              \
         CLONE_TO_CHUNK((ch), (buf).ptr, (buf).len); \
-        buffer_clear(&(buf));                           \
+        /*buffer_clear(&(buf));*/                           \
     }
 
 //根据静态buffer克隆（按长度）
@@ -118,7 +118,7 @@ static void clone_by_alloced_buffer(buffer_t *buf, buffer_t *src) {
     for(int i = 0; i < (n); i++){                   \
         free_buffer(ptr[i]);\
     }                                               \
-    memset(buf_p, 0x00, n);\
+    memset(buf_p, 0x00, n * sizeof(void *));\
 }
 
 

@@ -19,7 +19,7 @@ buffer_t *init_buffer_unptr() {
     buffer_t *p = malloc(sizeof(buffer_t));
     p->len = p->total = p->free = 0;
     p->ptr = NULL;
-    p->ptr_null = TRUE;
+    // p->ptr_null = TRUE;
     return p;
 }
 
@@ -29,7 +29,7 @@ buffer_t *init_buffer_ptr(size_t size) {
     pb->len = 0;
     pb->free = pb->total = size;
     pb->ptr = alloc_buffer(size);
-    pb->ptr_null = FALSE;
+    // pb->ptr_null = FALSE;
     return pb;
 }
 
@@ -58,7 +58,7 @@ l_err cat_to_buffer(buffer_t *buf, const uint8_t *str, size_t nbytes) {
         buf->ptr = p;
         buf->free = 0;
         buf->total = new_size;
-        buf->ptr_null = FALSE;
+        // buf->ptr_null = FALSE;
     } else {
         /* cat directly */
         p = buf->ptr;
@@ -106,7 +106,8 @@ inline void buffer_clear(buffer_t *pb) {
     if (pb != NULL) {
         pb->len = 0;
         buffer_freeptr(pb);
-        pb->ptr_null = TRUE;
+        pb->ptr = NULL;
+        // pb->ptr_null = TRUE;
     }
 }
 
