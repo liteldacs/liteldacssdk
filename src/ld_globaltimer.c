@@ -54,13 +54,13 @@ static int ld_sem_getvalue(ld_sem_t *l_sem) {
  */
 static void *timer_thread_func(void *args) {
     ld_globaltimer_t *g_timer = args;
-    // ld_lock(&g_timer->mutex);
+    ld_lock(&g_timer->mutex);
 
     event_base_dispatch(g_timer->ev_base);
 
-    // ld_unlock(&g_timer->mutex);
 
     event_base_free(g_timer->ev_base);
+    ld_unlock(&g_timer->mutex);
     free_bitset(g_timer->timer_slot->l_sems_set);
     free(g_timer->timer_slot);
     /* 重置global timer */
@@ -109,6 +109,15 @@ static void slot_activate(evutil_socket_t fd, short flags, void *args) {
     ld_unlock(&slot->mutex);
 }
 
+static uint64_t get_microtime() {
+    struct timeval curr_nano;
+    if (gettimeofday(&curr_nano, NULL) != 0) {
+        fprintf(stderr, "gettimeofday failed!\n");
+        return -1;
+    }
+    return curr_nano.tv_sec * 1000000L + curr_nano.tv_usec; // 转换为微秒
+}
+
 /**
  * 初始化定时信号事件槽
  * @param base
@@ -131,16 +140,22 @@ static timer_slots_t *init_timer_slot(struct event_base *base, uint64_t nano) {
 }
 
 
-l_err init_global_timer(ld_globaltimer_t *g_timer, const uint64_t time_val) {
-    // ld_lock(&g_timer->mutex);
+l_err init_global_timer(ld_globaltimer_t *g_timer, const uint64_t time_val, const uint64_t sync_micro) {
+
+    if (sync_micro != 0) {
+        uint64_t curr_time = get_microtime();
+        uint64_t remainder = curr_time % sync_micro;
+        uint64_t to_sync =  curr_time + (sync_micro-remainder);
+        while (get_microtime() < to_sync) {}
+    }
 
     evthread_use_pthreads();
+    ld_lock(&g_timer->mutex);
     g_timer->ev_base = event_base_new();
+    ld_unlock(&g_timer->mutex);
     if ((g_timer->timer_slot = init_timer_slot(g_timer->ev_base, time_val)) == NULL) {
         return LD_ERR_INTERNAL;
     }
-
-    // ld_unlock(&g_timer->mutex);
 
     pthread_create(&g_timer->th, NULL, timer_thread_func, g_timer);
     return LD_OK;

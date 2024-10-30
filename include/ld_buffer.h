@@ -117,8 +117,8 @@ static void clone_by_alloced_buffer(buffer_t *buf, buffer_t *src) {
     buffer_t **ptr = (buffer_t **)(buf_p); \
     for(int i = 0; i < (n); i++){                   \
         free_buffer(ptr[i]);\
-        memset(buf_p, 0x00, n);\
     }                                               \
+    memset(buf_p, 0x00, n);\
 }
 
 

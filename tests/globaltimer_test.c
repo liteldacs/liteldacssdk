@@ -54,13 +54,13 @@ void test_SF2_func(void *args) {
 void test_SF_func_2(void *args) {
     log_debug("SF2!!!!");
 
-    init_global_timer(&c_timer, MF_TIMER);
+    init_global_timer(&c_timer, MF_TIMER, 0);
     register_timer_event(&cyc_def_m);
 }
 
 
 int main() {
-    init_global_timer(&g_timer, SF_TIMER);
+    init_global_timer(&g_timer, SF_TIMER, SF_TIMER / 1000);
     register_timer_event(&cyc_def_s);
 
     while (TRUE) {

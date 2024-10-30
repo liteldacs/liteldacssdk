@@ -4,6 +4,8 @@
 
 #include "ld_buffer.h"
 
+#include <ld_log.h>
+
 uint8_t *alloc_buffer(size_t size) {
     uint8_t *p = (uint8_t *) calloc(size + 1, sizeof(uint8_t));
     if (p == NULL) {
@@ -99,8 +101,9 @@ void buffer_freeptr(buffer_t *pb) {
 }
 
 inline void buffer_clear(buffer_t *pb) {
-    // fprintf(stderr, "%d %d\n", pb != NULL, !pb->is_free);
-    if (pb != NULL && !pb->ptr_null) {
+    // log_buf(LOG_WARN, "TO CLEAR", pb->ptr, pb->len);
+    // if (pb != NULL && pb->ptr_null == FALSE) {
+    if (pb != NULL) {
         pb->len = 0;
         buffer_freeptr(pb);
         pb->ptr_null = TRUE;

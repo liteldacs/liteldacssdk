@@ -55,7 +55,7 @@ typedef struct ld_cycle_define_s {
     pthread_t th;
 } ld_cycle_define_t;
 
-l_err init_global_timer(ld_globaltimer_t *g_timer, const uint64_t time_val);
+l_err init_global_timer(ld_globaltimer_t *g_timer, const uint64_t time_val, const uint64_t sync_micro);
 
 void register_timer_event(ld_cycle_define_t *cyc_def);
 
