@@ -13,6 +13,16 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/global)
 
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC pthread)
 
+cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
+
+IF (${PRETTY_NAME} MATCHES "CentOS")
+    target_link_libraries(${PROJECT_NAME} LINK_PUBLIC km_src gmssl)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE USE_CRYCARD)
+ELSEIF (${PRETTY_NAME} MATCHES "Ubuntu")
+    target_link_libraries(${PROJECT_NAME} LINK_PUBLIC km_src gmssl)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE UNUSE_CRYCARD)
+ENDIF ()
+
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES output_name "ldacs_util")
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 INSTALL(TARGETS ${PROJECT_NAME} ARCHIVE DESTINATION lib/ldacs LIBRARY DESTINATION lib/ldacs RUNTIME DESTINATION bin)

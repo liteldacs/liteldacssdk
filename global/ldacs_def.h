@@ -89,7 +89,7 @@ typedef enum {
 #define MF_TIMER 58000000
 #define BC_MAC_INTVL 230000000
 #define CC_MAC_INTVL 50000000
-#define RL_INTVL 55000000
+#define RL_INTVL 50000000
 #define DC_INTVL 25000000
 
 #define SAC_LEN 12
