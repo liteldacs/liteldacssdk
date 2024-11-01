@@ -3,7 +3,7 @@
 //
 #include "ld_rbuffer.h"
 
-ld_rbuffer *ld_rbuffer_init(int size) {
+ld_rbuffer *ld_rbuffer_init(size_t size) {
     ld_rbuffer *rb = (ld_rbuffer *) malloc(sizeof(ld_rbuffer));
     rb->head = NULL;
     rb->tail = NULL;

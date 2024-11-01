@@ -8,7 +8,6 @@
 #include "../global/ldacs_sim.h"
 #include "ld_log.h"
 
-#define QUEUE_SIZE 4096
 
 typedef bool (*cmp_factor)(const void *a, const void *b);
 
@@ -24,10 +23,10 @@ typedef struct {
     rnode_t *head; // 指向链表的头节点
     rnode_t *tail; // 指向链表的尾节点
     int count; // 当前节点数
-    int size; // 缓冲区的最大容量
+    size_t size; // 缓冲区的最大容量
 } ld_rbuffer;
 
-ld_rbuffer *ld_rbuffer_init(int size);
+ld_rbuffer *ld_rbuffer_init(size_t size);
 
 l_err ld_rbuffer_push_front(ld_rbuffer *rb, void *data);
 

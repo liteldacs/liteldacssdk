@@ -30,6 +30,12 @@ set(tests
         rbuffer
 )
 
+cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
+IF (${PRETTY_NAME} MATCHES "Ubuntu")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -g")
+    #    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=leak -g")
+ENDIF ()
+
 enable_testing()
 foreach (name ${tests})
     add_test(NAME ${name} COMMAND ${name}test)

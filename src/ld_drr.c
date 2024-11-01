@@ -3,17 +3,31 @@
 //
 #include "ld_drr.h"
 
-ld_drr_t *init_ld_drr() {
+ld_drr_t *init_ld_drr(size_t sz) {
     ld_drr_t *drr = calloc(1, sizeof(ld_drr_t));
-    drr->active_list = ld_rbuffer_init(QUEUE_SIZE);
+    drr->active_list = ld_rbuffer_init(sz);
+    drr->max_sz = sz;
+    drr->req_szs = calloc(sz, sizeof(size_t));
+    drr->req_entitys = calloc(sz, sizeof(drr_req_t));
     zero(drr->req_szs);
 
-    for (int i = 0; i < QUEUE_SIZE; i++) {
+    for (int i = 0; i < sz; i++) {
         drr->req_entitys[i].SAC = i;
         drr->req_entitys[i].DC = 0;
     }
 
     return drr;
+}
+
+l_err free_ld_drr(ld_drr_t *drr) {
+    if (drr) {
+        if (drr->active_list)   ld_rbuffer_free(drr->active_list);
+        if (drr->req_szs)   free(drr->req_szs);
+        if (drr->req_entitys)   free(drr->req_entitys);
+        free(drr);
+        return LD_OK;
+    }
+    return LD_ERR_NULL;
 }
 
 void ld_req_update(ld_drr_t *drr, uint16_t SAC, size_t req_sz) {
@@ -30,17 +44,18 @@ static bool drr_fac(const void *a, const void *b) {
 * LDACS Default Resource Allocation.(DWRR / DRR)
 *
 *
-* W: The total remaining bandwidth or available resources.
-* W_min: The minimum threshold for bandwidth or resources.
+* W: The total remaining available resources.
+* W_min: The minimum threshold for resources.
 * DC_i: The deficit counter for the currently served user.
 * pkt_size: The size of a fixed packet for each transmission.
 * ReqMap_i: The data amount requested by the user.
 * AllocMap_i: The allocated data amount for the user.
 * activelist: A queue of active users awaiting bandwidth.
 */
-l_err resource_alloc(ld_drr_t *drr, size_t pkt_size, size_t W, size_t W_min, size_t *alloc_map) {
+l_err drr_resource_alloc(ld_drr_t *drr, size_t pkt_size, size_t W, size_t W_min, alloc_cb cb) {
     size_t total_req_bytes = 0;
-    for (int i = 0; i < QUEUE_SIZE; i++) {
+    size_t *alloc_map = calloc(drr->max_sz, sizeof(size_t));
+    for (int i = 0; i < drr->max_sz; i++) {
         drr_req_t *req_i = &drr->req_entitys[i];
         if (req_i->req_sz == 0) continue;
 
@@ -103,5 +118,7 @@ l_err resource_alloc(ld_drr_t *drr, size_t pkt_size, size_t W, size_t W_min, siz
         else if (frag_data == TRUE) ld_rbuffer_push_front(drr->active_list, req_i);
         else ld_rbuffer_push_back(drr->active_list, req_i);
     }
+    cb(drr, alloc_map);
+    free(alloc_map);
     return LD_OK;
 }

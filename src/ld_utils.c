@@ -13,7 +13,6 @@ void generate_rand(uint8_t *rand, size_t len) {
 #endif
 }
 
-
 /* generate a rand int, max size is 64bits (8 bytes) */
 uint64_t generate_urand(size_t rand_bits_sz) {
     if (rand_bits_sz > SYSTEM_BITS) return 0;
