@@ -52,7 +52,7 @@ static bool drr_fac(const void *a, const void *b) {
 * AllocMap_i: The allocated data amount for the user.
 * activelist: A queue of active users awaiting bandwidth.
 */
-l_err drr_resource_alloc(ld_drr_t *drr, size_t pkt_size, size_t W, size_t W_min, alloc_cb cb) {
+l_err drr_resource_alloc(ld_drr_t *drr, size_t pkt_size, size_t W, size_t W_min, alloc_cb callback_func, void *cb_args) {
     size_t total_req_bytes = 0;
     size_t *alloc_map = calloc(drr->max_sz, sizeof(size_t));
     for (int i = 0; i < drr->max_sz; i++) {
@@ -118,7 +118,7 @@ l_err drr_resource_alloc(ld_drr_t *drr, size_t pkt_size, size_t W, size_t W_min,
         else if (frag_data == TRUE) ld_rbuffer_push_front(drr->active_list, req_i);
         else ld_rbuffer_push_back(drr->active_list, req_i);
     }
-    cb(drr, alloc_map);
+    callback_func(drr, alloc_map, cb_args);
     free(alloc_map);
     return LD_OK;
 }
