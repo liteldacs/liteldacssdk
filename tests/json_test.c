@@ -44,6 +44,7 @@ json_tmpl_desc_t inner_tmpl_desc = {
 };
 
 int main() {
+
     struct inner_json inner1 = {
         .m = 1,
     };

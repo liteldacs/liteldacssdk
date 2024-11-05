@@ -5,6 +5,8 @@
 #include "ld_window.h"
 
 
+l_err free_window_item(window_item_t *wi);
+
 uint8_t get_window_end(window_t *w){
     return (w->win_start + w->win_size) % w->seq_sz;
 }
@@ -51,6 +53,8 @@ window_item_t **get_items_in_window(window_t *w){
     return items_ptr;
 }
 
+
+
 l_err put_window_item(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq){
     if (w->avail_size == 0) return LD_ERR_INTERNAL;
     w->items[w->avail_start].cos = cos;
@@ -64,13 +68,82 @@ l_err put_window_item(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq){
     return LD_OK;
 }
 
-l_err pop_window_item(window_t *w, window_item_t **item) {
-    if (w->win_size == 0)    return LD_ERR_INTERNAL;
-    *item = &w->items[w->win_start];
+window_item_t *pop_window_item(window_t *w) {
+    if (w->avail_size == w->seq_sz)    return NULL;
+    window_item_t *wi = calloc(1, sizeof(window_item_t));
+
+    memcpy(wi, &w->items[w->win_start], sizeof(window_item_t));
+    memset(&w->items[w->win_start], 0, sizeof(window_item_t));
+
     w->win_start = (w->win_start + 1) % w->seq_sz;
     w->avail_size++;
 
     pthread_cond_signal(w->put_cond);
 
+    return wi;
+}
+
+window_item_t *pop_frag_window_item(window_t *w, size_t sz) {
+    if (w->avail_size == w->seq_sz)    return NULL;
+    window_item_t *wi = calloc(1, sizeof(window_item_t));
+    window_item_t *p_item = &w->items[w->win_start % w->seq_sz];
+
+    wi->cos = p_item->cos;
+    wi->buf = init_buffer_ptr(sz);
+    CLONE_TO_CHUNK(*wi->buf, p_item->buf->ptr, sz);
+
+    p_item->is_frag = TRUE;
+
+    return wi;
+}
+
+
+window_pop_t *check_pop_window_item(window_t *w, size_t *avail_buf_sz) {
+    window_item_t *p_item = &w->items[w->win_start % w->seq_sz];
+    if (p_item->buf == NULL || w->avail_size == 0)  return NULL;
+
+    window_item_t *item = NULL;
+    window_pop_t *pop_out = calloc(1, sizeof(window_pop_t));
+
+    printf("%d %d\n", p_item->buf->len, *avail_buf_sz);
+    if (p_item->buf->len <= *avail_buf_sz) {
+        if ((item = pop_window_item(w)) == NULL) {
+            free_window_item(item);
+            return NULL;
+        }
+        pop_out->is_lfr = TRUE;
+
+        *avail_buf_sz -= item->buf->len;
+
+    } else {
+        if ((item = pop_frag_window_item(w, *avail_buf_sz)) == NULL) {
+            free_window_item(item);
+            return NULL;
+        }
+        pop_out->is_lfr = FALSE;
+    }
+    pop_out->cos = item->cos;
+    pop_out->buf = init_buffer_unptr();
+    CLONE_BY_BUFFER(*pop_out->buf, *item->buf);
+    pop_out->is_rst = item->is_frag == TRUE ?  FALSE : TRUE;
+
+    free_window_item(item);
+
+    return pop_out;
+}
+
+l_err free_window_item(window_item_t *wi) {
+    if (wi) {
+        free_buffer(wi->buf);
+        free(wi);
+    }
+    return LD_OK;
+}
+
+l_err free_window_pop(window_pop_t *pop) {
+    if (pop) {
+        free_buffer(pop->buf);
+        free(pop);
+    }
     return LD_OK;
 }

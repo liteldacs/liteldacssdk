@@ -111,8 +111,8 @@ static void clone_by_alloced_buffer(buffer_t *buf, buffer_t *src) {
     }                                               \
 }
 
-//free掉malloc过的数组
-#define FREE_BUF_ARRAY_DEEP(buf_p, n) \
+//clear掉malloc过的数组
+#define CLEAR_BUF_ARRAY_DEEP(buf_p, n) \
 {                                      \
     buffer_t **ptr = (buffer_t **)(buf_p); \
     for(int i = 0; i < (n); i++){                   \
@@ -120,6 +120,18 @@ static void clone_by_alloced_buffer(buffer_t *buf, buffer_t *src) {
     }                                               \
     memset(buf_p, 0x00, n * sizeof(void *));\
 }
+
+//free掉malloc过的数组
+#define FREE_BUF_ARRAY_DEEP(buf_p, n) \
+{                                      \
+    buffer_t **ptr = (buffer_t **)(buf_p); \
+    for(int i = 0; i < (n); i++){                   \
+        free_buffer(ptr[i]);\
+    }                                               \
+    free(buf_p);\
+    /*memset(buf_p, 0x00, n * sizeof(void *)); */\
+}
+
 
 
 //#define INIT_BUF_ARRAY_UNPTR(buf_p, n) \
