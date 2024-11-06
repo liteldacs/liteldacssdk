@@ -9,14 +9,16 @@
 
 typedef struct window_item_s {
     uint8_t cos;
-    bool is_frag;
+    uint8_t offset;
     buffer_t *buf;
 } window_item_t;
 
 
 typedef struct window_pop_s {
     buffer_t *buf;
+    uint8_t pid;
     uint8_t cos;
+    uint16_t offset;
     bool is_rst;
     bool is_lfr;
 }window_pop_t;
@@ -42,7 +44,7 @@ l_err put_window_item(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq);
 uint8_t get_window_end(window_t *w);
 
 
-window_pop_t *check_pop_window_item(window_t *w, size_t *avail_buf_sz);
+window_pop_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz);
 
 l_err free_window_pop(window_pop_t *pop);
 
