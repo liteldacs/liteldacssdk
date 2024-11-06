@@ -109,19 +109,19 @@ typedef struct multi_timer {
     pthread_t multiple_timer_thread;
 } multi_timer_t;
 
-/**
- * be used to define cycle task
- */
-typedef struct cycle_event_s {
-    multi_timer_t *mt;
-    uint16_t timer_idx;
-    mt_callback_func timer_func;
-    uint64_t time_intvl;
-    uint64_t times;
-    is_stop volatile *stop_flag;
-    pthread_t th;
-} cycle_event_t;
-
+// /**
+//  * be used to define cycle task
+//  */
+// typedef struct cycle_event_s {
+//     multi_timer_t *mt;
+//     uint16_t timer_idx;
+//     mt_callback_func timer_func;
+//     uint64_t time_intvl;
+//     uint64_t times;
+//     is_stop volatile *stop_flag;
+//     pthread_t th;
+// } cycle_event_t;
+//
 
 /*
  * mt_init - Initializes the multitimer
@@ -251,10 +251,5 @@ int timespec_subtract(struct timespec *result, struct timespec *x, struct timesp
 l_err mt_chilog(multi_timer_t *mt, bool active_only);
 
 int get_active_num(multi_timer_t *mt);
-
-cycle_event_t *init_cycele_event(multi_timer_t *mt, uint16_t idx,
-                                 mt_callback_func cb_func, uint64_t intvl);
-
-int start_cycle_task(cycle_event_t *c);
 
 #endif //TEST_CLIENT_TIMMER_H

@@ -7,7 +7,7 @@ set(CMAKE_C_STANDARD 11)
 set(tests
         json
         #        stateMachine
-        #        multitimer
+#        multitimer
         #        crc
         #        buffer
         #        pbs
@@ -28,6 +28,7 @@ set(tests
         bitset
         drr
         rbuffer
+        test
 )
 
 cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)

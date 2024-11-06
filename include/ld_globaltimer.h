@@ -50,7 +50,6 @@ typedef struct ld_cycle_define_s {
     is_stop volatile *stop_flag;
     bool is_instant;
 
-
     ld_sem_t *l_sem;
     pthread_t th;
 } ld_cycle_define_t;

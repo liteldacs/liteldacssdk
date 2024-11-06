@@ -260,41 +260,41 @@ int get_active_num(multi_timer_t *mt) {
     return res;
 }
 
-static void *cycle_thread_func(void *args) {
-    cycle_event_t *cycle_th = args;
-    struct timespec sleepnano;
-
-    sleepnano.tv_sec = (long) cycle_th->time_intvl / SECOND;
-    sleepnano.tv_nsec = (long) cycle_th->time_intvl % SECOND;
-
-    uint64_t to_times = cycle_th->times;
-
-    while (*cycle_th->stop_flag != TRUE) {
-        if (mt_set_timer(cycle_th->mt, cycle_th->timer_idx, 0, cycle_th->timer_func, args)) {
-            log_error("Cannot set timmer by %d", cycle_th->timer_idx);
-            break;
-        }
-        if (cycle_th->times == TIMER_INFINITE || --to_times) {
-            nanosleep(&sleepnano, NULL);
-            continue;
-        } else {
-            break;
-        }
-    }
-}
-
-cycle_event_t *init_cycele_event(multi_timer_t *mt, uint16_t idx,
-                                 mt_callback_func cb_func, uint64_t intvl) {
-    cycle_event_t *ev = malloc(sizeof(cycle_event_t));
-    ev->mt = mt;
-    ev->timer_idx = idx;
-    ev->timer_func = cb_func;
-    ev->time_intvl = intvl;
-    return ev;
-}
-
-int start_cycle_task(cycle_event_t *c) {
-    if (pthread_create(&c->th, NULL, cycle_thread_func, c) != 0) {
-        pthread_exit(NULL);
-    }
-}
+// static void *cycle_thread_func(void *args) {
+//     cycle_event_t *cycle_th = args;
+//     struct timespec sleepnano;
+//
+//     sleepnano.tv_sec = (long) cycle_th->time_intvl / SECOND;
+//     sleepnano.tv_nsec = (long) cycle_th->time_intvl % SECOND;
+//
+//     uint64_t to_times = cycle_th->times;
+//
+//     while (*cycle_th->stop_flag != TRUE) {
+//         if (mt_set_timer(cycle_th->mt, cycle_th->timer_idx, 0, cycle_th->timer_func, args)) {
+//             log_error("Cannot set timmer by %d", cycle_th->timer_idx);
+//             break;
+//         }
+//         if (cycle_th->times == TIMER_INFINITE || --to_times) {
+//             nanosleep(&sleepnano, NULL);
+//             continue;
+//         } else {
+//             break;
+//         }
+//     }
+// }
+//
+// cycle_event_t *init_cycele_event(multi_timer_t *mt, uint16_t idx,
+//                                  mt_callback_func cb_func, uint64_t intvl) {
+//     cycle_event_t *ev = malloc(sizeof(cycle_event_t));
+//     ev->mt = mt;
+//     ev->timer_idx = idx;
+//     ev->timer_func = cb_func;
+//     ev->time_intvl = intvl;
+//     return ev;
+// }
+//
+// int start_cycle_task(cycle_event_t *c) {
+//     if (pthread_create(&c->th, NULL, cycle_thread_func, c) != 0) {
+//         pthread_exit(NULL);
+//     }
+// }
