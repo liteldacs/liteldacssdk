@@ -2,11 +2,11 @@
 // Created by 邹嘉旭 on 2024/11/7.
 //
 #include "ld_multitimer.h"
-void callback_func(multi_timer_t *mt, single_timer_t *timer, void *args) {
+void callback_func(ld_multitimer_t *mt, single_timer_t *timer, void *args) {
     log_warn("TIMED OUT! %i", timer->id);
 }
 
-void callback_func_2(multi_timer_t *mt, single_timer_t *timer, void *args) {
+void callback_func_2(ld_multitimer_t *mt, single_timer_t *timer, void *args) {
     {
         //mt_chilog(INFO, mt, true);
         struct timeval tp;
@@ -18,13 +18,13 @@ void callback_func_2(multi_timer_t *mt, single_timer_t *timer, void *args) {
 }
 
 int main(int argc, char *argv[]) {
-    multi_timer_t mt;
+    ld_multitimer_t mt;
     mt_init(&mt, 5);
 
-    mt_set_timer_name(&mt, 0, "Retransmission");
-    mt_set_timer_name(&mt, 1, "Persist");
-    mt_set_timer_name(&mt, 2, "Delayed ACK");
-    mt_set_timer_name(&mt, 3, "2MSL");
+    // mt_set_timer_name(&mt, 0, "Retransmission");
+    // mt_set_timer_name(&mt, 1, "Persist");
+    // mt_set_timer_name(&mt, 2, "Delayed ACK");
+    // mt_set_timer_name(&mt, 3, "2MSL");
 
     log_info("ACTIVE TIMERS");
 

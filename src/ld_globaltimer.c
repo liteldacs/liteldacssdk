@@ -142,19 +142,20 @@ static timer_slots_t *init_timer_slot(struct event_base *base, uint64_t nano) {
 
 l_err init_global_timer(ld_globaltimer_t *g_timer, const uint64_t time_val, const uint64_t sync_micro) {
 
-    if (sync_micro != 0) {
-        uint64_t curr_time = get_microtime();
-        uint64_t remainder = curr_time % sync_micro;
-        uint64_t to_sync =  curr_time + (sync_micro-remainder);
-        while (get_microtime() < to_sync) {}
-    }
-
     evthread_use_pthreads();
     ld_lock(&g_timer->mutex);
     g_timer->ev_base = event_base_new();
     ld_unlock(&g_timer->mutex);
     if ((g_timer->timer_slot = init_timer_slot(g_timer->ev_base, time_val)) == NULL) {
         return LD_ERR_INTERNAL;
+    }
+
+
+    if (sync_micro != 0) {
+        uint64_t curr_time = get_microtime();
+        uint64_t remainder = curr_time % sync_micro;
+        uint64_t to_sync =  curr_time + (sync_micro-remainder);
+        while (get_microtime() < to_sync) {}
     }
 
     pthread_create(&g_timer->th, NULL, timer_thread_func, g_timer);

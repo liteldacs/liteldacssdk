@@ -9,7 +9,7 @@
 static int loglevel = ERROR;
 
 struct worker_args {
-    multi_timer_t *mt;
+    ld_multitimer_t *mt;
 };
 
 /* function for multitimer thread */
@@ -81,7 +81,7 @@ int timespec_subtract(struct timespec *result, struct timespec *x, struct timesp
 
 
 /* See ld_multitimer.h */
-l_err mt_init(multi_timer_t *mt, uint16_t num_timers) {
+l_err mt_init(ld_multitimer_t *mt, uint16_t num_timers) {
     mt->timer_num = num_timers;
 
     mt->all_timers = calloc(num_timers, sizeof(single_timer_t));
@@ -112,7 +112,7 @@ l_err mt_init(multi_timer_t *mt, uint16_t num_timers) {
 }
 
 /* See ld_multitimer.h */
-l_err mt_free(multi_timer_t *mt) {
+l_err mt_free(ld_multitimer_t *mt) {
     if (mt) {
         // stop the timer thread
         pthread_cancel(mt->multiple_timer_thread);
@@ -125,7 +125,7 @@ l_err mt_free(multi_timer_t *mt) {
 }
 
 /* See ld_multitimer.h */
-l_err mt_get_timer_by_id(multi_timer_t *mt, uint16_t id, single_timer_t **timer) {
+l_err mt_get_timer_by_id(ld_multitimer_t *mt, uint16_t id, single_timer_t **timer) {
     if (id < 0 || id >= mt->timer_num) {
         return LD_ERR_INVALID;
     }
@@ -134,7 +134,7 @@ l_err mt_get_timer_by_id(multi_timer_t *mt, uint16_t id, single_timer_t **timer)
 }
 
 /* See ld_multitimer.h */
-l_err mt_set_timer(multi_timer_t *mt, uint16_t id, uint64_t timeout, mt_callback_func callback, void *callback_args) {
+l_err mt_set_timer(ld_multitimer_t *mt, uint16_t id, uint64_t timeout, mt_callback_func callback, void *callback_args) {
     single_timer_t *timer;
 
     if (mt_get_timer_by_id(mt, id, &timer) == LD_ERR_INVALID || timer->active) {
@@ -153,7 +153,7 @@ l_err mt_set_timer(multi_timer_t *mt, uint16_t id, uint64_t timeout, mt_callback
 }
 
 /* See ld_multitimer.h */
-l_err mt_cancel_timer(multi_timer_t *mt, uint16_t id) {
+l_err mt_cancel_timer(ld_multitimer_t *mt, uint16_t id) {
     single_timer_t *timer;
     if (mt_get_timer_by_id(mt, id, &timer) == LD_ERR_INVALID || !timer->active) {
         return LD_ERR_INTERNAL;
@@ -170,7 +170,7 @@ l_err mt_cancel_timer(multi_timer_t *mt, uint16_t id) {
 }
 
 /* See ld_multitimer.h */
-l_err mt_set_timer_name(multi_timer_t *mt, uint16_t id, const char *name) {
+l_err mt_set_timer_name(ld_multitimer_t *mt, uint16_t id, const char *name) {
     /* Your code here */
     single_timer_t *timer;
     if (mt_get_timer_by_id(mt, id, &timer) == LD_ERR_INVALID || !timer->active) {
@@ -211,7 +211,7 @@ l_err mt_chilog_single_timer(single_timer_t *timer) {
 }
 
 /* See ld_multitimer.h */
-l_err mt_chilog(multi_timer_t *mt, bool active_only) {
+l_err mt_chilog(ld_multitimer_t *mt, bool active_only) {
     if (active_only) {
         pthread_mutex_lock(&mt->lock);
         single_timer_t *el;
@@ -229,7 +229,7 @@ l_err mt_chilog(multi_timer_t *mt, bool active_only) {
 
 void *multiple_timer_machine(void *args) {
     struct worker_args *wa = (struct worker_args *) args;
-    multi_timer_t *mt = wa->mt;
+    ld_multitimer_t *mt = wa->mt;
 
     while (TRUE) {
         pthread_mutex_lock(&mt->lock);
@@ -250,7 +250,7 @@ void *multiple_timer_machine(void *args) {
     }
 }
 
-int get_active_num(multi_timer_t *mt) {
+int get_active_num(ld_multitimer_t *mt) {
     int res = 0;
     for (int i = 0; i < mt->timer_num; i++) {
         if (mt->all_timers[i].active) {

@@ -122,7 +122,7 @@ static void clone_by_alloced_buffer(buffer_t *buf, buffer_t *src) {
 }
 
 //free掉malloc过的数组
-#define FREE_BUF_ARRAY_DEEP(buf_p, n) \
+#define FREE_BUF_ARRAY_DEEP2(buf_p, n) \
 {                                      \
     buffer_t **ptr = (buffer_t **)(buf_p); \
     for(int i = 0; i < (n); i++){                   \

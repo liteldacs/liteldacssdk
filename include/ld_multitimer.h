@@ -51,7 +51,7 @@
 
 /* Forward declarations */
 typedef struct single_timer single_timer_t;
-typedef struct multi_timer multi_timer_t;
+typedef struct multi_timer ld_multitimer_t;
 
 /* Function pointer typedef for timer callback function
  *
@@ -62,7 +62,7 @@ typedef struct multi_timer multi_timer_t;
  *   there are no parameters)
  *
  * The callback function does not return anything. */
-typedef void (*mt_callback_func)(multi_timer_t *, single_timer_t *, void *);
+typedef void (*mt_callback_func)(ld_multitimer_t *, single_timer_t *, void *);
 
 /* Represents a single timer. */
 typedef struct single_timer {
@@ -107,7 +107,7 @@ typedef struct multi_timer {
     pthread_cond_t condvar;
     pthread_mutex_t lock;
     pthread_t multiple_timer_thread;
-} multi_timer_t;
+} ld_multitimer_t;
 
 // /**
 //  * be used to define cycle task
@@ -139,7 +139,7 @@ typedef struct multi_timer {
  *  - CHITCP_EINIT: Could not initialize some part of the multitimer
  *  - CHITCP_ETHREAD: Could not create multitimer thread
  */
-l_err mt_init(multi_timer_t *mt, uint16_t num_timers);
+l_err mt_init(ld_multitimer_t *mt, uint16_t num_timers);
 
 
 /*
@@ -153,7 +153,7 @@ l_err mt_init(multi_timer_t *mt, uint16_t num_timers);
  * Returns:
  *  - CHITCP_OK: multitimer freed successfully
  */
-l_err mt_free(multi_timer_t *mt);
+l_err mt_free(ld_multitimer_t *mt);
 
 /*
  * mt_get_timer_by_id - Retrieves a timer with a given identifier
@@ -172,7 +172,7 @@ l_err mt_free(multi_timer_t *mt);
  *  - CHITCP_EINVAL: Invalid timer identifier
  *
  */
-l_err mt_get_timer_by_id(multi_timer_t *mt, uint16_t id, single_timer_t **timer);
+l_err mt_get_timer_by_id(ld_multitimer_t *mt, uint16_t id, single_timer_t **timer);
 
 
 /* mt_set_timer - Sets a timer
@@ -198,7 +198,7 @@ l_err mt_get_timer_by_id(multi_timer_t *mt, uint16_t id, single_timer_t **timer)
  *  - CHITCP_EINVAL: Invalid timer identifier, or specified a timer
  *                   that is already active
  */
-l_err mt_set_timer(multi_timer_t *mt, uint16_t id, uint64_t timeout, mt_callback_func callback, void *callback_args);
+l_err mt_set_timer(ld_multitimer_t *mt, uint16_t id, uint64_t timeout, mt_callback_func callback, void *callback_args);
 
 
 /* mt_cancel_timer - Sets a timer
@@ -214,7 +214,7 @@ l_err mt_set_timer(multi_timer_t *mt, uint16_t id, uint64_t timeout, mt_callback
  *  - CHITCP_EINVAL: Invalid timer identifier, or specified a timer
  *                   that is not active
  */
-l_err mt_cancel_timer(multi_timer_t *mt, uint16_t id);
+l_err mt_cancel_timer(ld_multitimer_t *mt, uint16_t id);
 
 
 /* mt_set_timer_name - Sets the name of a timer
@@ -230,7 +230,7 @@ l_err mt_cancel_timer(multi_timer_t *mt, uint16_t id);
  *  - CHITCP_EINVAL: Invalid timer identifier, or specified a timer
  *                   that is not active
  */
-l_err mt_set_timer_name(multi_timer_t *mt, uint16_t id, const char *name);
+l_err mt_set_timer_name(ld_multitimer_t *mt, uint16_t id, const char *name);
 
 
 /* timespec_subtract - Subtracts two timespecs
@@ -248,8 +248,8 @@ l_err mt_set_timer_name(multi_timer_t *mt, uint16_t id, const char *name);
  */
 int timespec_subtract(struct timespec *result, struct timespec *x, struct timespec *y);
 
-l_err mt_chilog(multi_timer_t *mt, bool active_only);
+l_err mt_chilog(ld_multitimer_t *mt, bool active_only);
 
-int get_active_num(multi_timer_t *mt);
+int get_active_num(ld_multitimer_t *mt);
 
 #endif //TEST_CLIENT_TIMMER_H
