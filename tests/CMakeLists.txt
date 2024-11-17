@@ -7,7 +7,7 @@ set(CMAKE_C_STANDARD 11)
 set(tests
         json
         #        stateMachine
-#        multitimer
+        multitimer
         #        crc
         #        buffer
         #        pbs

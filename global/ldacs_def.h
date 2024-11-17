@@ -94,6 +94,7 @@ typedef enum {
 #define DC_INTVL 25000000
 
 #define SAC_LEN 12
+#define SAC_MAX (1 << 12)
 #define DEFAULT_SAC 0xFFFF
 #define DEFAULT_CO 0xFFFF
 #define DEFAULT_RPSO 0xFF

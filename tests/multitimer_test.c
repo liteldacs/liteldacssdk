@@ -1,13 +1,13 @@
-#include "../global/ldacs_sim.h"
+#include "ld_multitimer.h"
 
-void callback_func(multi_timer_t *mt, single_timer_t *timer, void *args) {
+void callback_func(ld_multitimer_t *mt, single_timer_t *timer, void *args) {
     //chilog(INFO, "TIMED OUT! %i", timer->id);
     //chilog(INFO, "ACTIVE TIMERS");
     fprintf(stderr, "!!!!!!!!!\n");
     //mt_chilog(INFO, mt, true);
 }
 
-void callback_func_2(multi_timer_t *mt, single_timer_t *timer, void *args) {
+void callback_func_2(ld_multitimer_t *mt, single_timer_t *timer, void *args) {
     {
         //mt_chilog(INFO, mt, true);
         struct timeval tp;
@@ -19,7 +19,7 @@ void callback_func_2(multi_timer_t *mt, single_timer_t *timer, void *args) {
 }
 
 int main(int argc, char *argv[]) {
-     multi_timer_t mt;
+     ld_multitimer_t mt;
      mt_init(&mt, 5);
 
      mt_set_timer_name(&mt, 0, "Retransmission");
@@ -50,9 +50,6 @@ int main(int argc, char *argv[]) {
     // sleep(5);
     //
     // mt_free(&mt);
-
-    printf("%d\n", bytes_len(17));
-    printf("%lu", generate_urand(12));
 
     return 0;
 }

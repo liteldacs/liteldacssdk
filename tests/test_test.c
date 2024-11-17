@@ -18,6 +18,7 @@ void callback_func_2(ld_multitimer_t *mt, single_timer_t *timer, void *args) {
 }
 
 int main(int argc, char *argv[]) {
+
     ld_multitimer_t mt;
     mt_init(&mt, 5);
 

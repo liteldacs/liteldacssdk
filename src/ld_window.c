@@ -78,12 +78,10 @@ window_item_t *pop_window_item(window_t *w) {
     p_item->offset = p_item->buf->len;
 
     memcpy(wi, p_item, sizeof(window_item_t));
-    // log_error("!!!!!!!!!!!! %p",wi);
     memset(p_item, 0, sizeof(window_item_t));
 
     w->win_start = (w->win_start + 1) % w->seq_sz;
     w->avail_size++;
-    // log_error("!!!!!!!!!!!! %p",wi);
 
 
     pthread_cond_signal(w->put_cond);
@@ -116,7 +114,6 @@ window_pop_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz) {
     window_pop_t *pop_out = calloc(1, sizeof(window_pop_t));
     pop_out->pid = w->win_start;
 
-    // printf("%d %d\n", p_item->buf->len, *avail_buf_sz);
     if (p_item->buf->len <= *avail_buf_sz) {
         if ((item = pop_window_item(w)) == NULL) {
             free_window_item(item);

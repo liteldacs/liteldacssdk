@@ -103,6 +103,9 @@ void to_data(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yam
     char *debug = "debug";
     char *init_fl_freq = "init_fl_freq";
     char *init_rl_freq = "init_rl_freq";
+    char *addr = "addr";
+    char *sgw_addr = "sgw_addr";
+    char *sgw_port = "sgw_port";
 
     char *http_tag = "http";
     char *http_port = "http_port";
@@ -118,6 +121,8 @@ void to_data(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yam
             config.role = LD_GS;
         } else if (!strcmp(role_str, "gsc")) {
             config.role = LD_GSC;
+        }  else if (!strcmp(role_str, "sgw")) {
+            config.role = LD_SGW;
         } else {
             log_fatal("Bad role");
             clean_prs(fp, parser, event);
@@ -131,6 +136,26 @@ void to_data(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yam
         yaml_event_delete(event);
         parse_next(parser, event);
         config.port = atoi((char *) event->data.scalar.value);
+    } else if (!strcmp(buf, addr)) {
+        yaml_event_delete(event);
+        parse_next(parser, event);
+        {
+            zero(config.addr);
+            strcpy(config.addr, (char *)event->data.scalar.value);
+        }
+        //config.addr = (char *)event->data.scalar.value;
+    }  else if (!strcmp(buf, sgw_port)) {
+        yaml_event_delete(event);
+        parse_next(parser, event);
+        config.sgw_port = atoi((char *) event->data.scalar.value);
+    } else if (!strcmp(buf, sgw_addr)) {
+        yaml_event_delete(event);
+        parse_next(parser, event);
+        {
+            zero(config.sgw_addr);
+            strcpy(config.sgw_addr, (char *)event->data.scalar.value);
+        }
+        //config.addr = (char *)event->data.scalar.value;
     } else if (!strcmp(buf, http_port)) {
         yaml_event_delete(event);
         parse_next(parser, event);
