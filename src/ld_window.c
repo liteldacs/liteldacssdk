@@ -83,7 +83,6 @@ window_item_t *pop_window_item(window_t *w) {
     w->win_start = (w->win_start + 1) % w->seq_sz;
     w->avail_size++;
 
-
     pthread_cond_signal(w->put_cond);
 
     return wi;
@@ -105,6 +104,31 @@ window_item_t *pop_frag_window_item(window_t *w, size_t sz) {
     return wi;
 }
 
+l_err check_put_window_item(window_t *w, window_pop_t *pop) {
+    window_item_t *p_item = &w->items[pop->pid];
+    // if(p_item->buf == NULL) {
+    //     log_error("Wrong Window Item by %d", pop->pid);
+    //     return LD_ERR_NULL;
+    // }
+
+    p_item->offset = pop->offset;
+    p_item->cos = pop->cos;
+    if(pop->is_rst == TRUE) {
+        //offset is 0
+        p_item->buf = init_buffer_unptr();
+        CLONE_TO_CHUNK(*p_item->buf, pop->buf->ptr, pop->buf->len);
+    }else {
+        if(p_item->buf == NULL) {
+            log_error("Fragment buffer is Null");
+            return LD_ERR_NULL;
+        }
+        if(cat_to_buffer(p_item->buf, pop->buf->ptr, pop->buf->len)) {
+            log_error("CAT BUFFER Failed");
+            return LD_ERR_INTERNAL;
+        }
+    }
+    return LD_OK;
+}
 
 window_pop_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz) {
     window_item_t *p_item = &w->items[w->win_start % w->seq_sz];
@@ -113,6 +137,7 @@ window_pop_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz) {
     window_item_t *item = NULL;
     window_pop_t *pop_out = calloc(1, sizeof(window_pop_t));
     pop_out->pid = w->win_start;
+    pop_out->is_rst = p_item->offset != 0 ?  FALSE : TRUE;
 
     if (p_item->buf->len <= *avail_buf_sz) {
         if ((item = pop_window_item(w)) == NULL) {
@@ -130,10 +155,11 @@ window_pop_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz) {
         }
         pop_out->is_lfr = FALSE;
     }
+
+    log_warn("!!!!!!! OFFSET %d", item->offset);
     pop_out->cos = item->cos;
     pop_out->buf = init_buffer_unptr();
     CLONE_BY_BUFFER(*pop_out->buf, *item->buf);
-    pop_out->is_rst = item->offset != 0 ?  FALSE : TRUE;
     pop_out->offset = item->offset;
 
     free_window_item(item);

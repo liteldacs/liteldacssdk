@@ -44,6 +44,8 @@ l_err put_window_item(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq);
 uint8_t get_window_end(window_t *w);
 
 
+l_err check_put_window_item(window_t *w, window_pop_t *pop);
+
 window_pop_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz);
 
 l_err free_window_pop(window_pop_t *pop);

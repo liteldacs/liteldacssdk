@@ -25,6 +25,8 @@ ld_bitset_t *init_bitset(const size_t res_num, const size_t res_sz, init_resourc
 
 void free_bitset(void *v);
 
+l_err bs_record_by_index(ld_bitset_t *set, uint64_t i);
+
 l_err bs_alloc_resource(ld_bitset_t *set, void **res);
 
 void bs_free_resource(ld_bitset_t *set, uint8_t index);

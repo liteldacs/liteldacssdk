@@ -32,6 +32,11 @@ void free_bitset(void *v) {
     }
 }
 
+l_err bs_record_by_index(ld_bitset_t *set, uint64_t i) {
+    set->bitset[i / 8] |= (1 << (i % 8));
+    return LD_OK;
+}
+
 l_err bs_alloc_resource(ld_bitset_t *set, void **res) {
     for (int i = 0; i < set->res_num; i++) {
         if ((set->bitset[i / 8] & (1 << (i % 8))) == 0) {
