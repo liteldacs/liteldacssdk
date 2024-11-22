@@ -41,25 +41,10 @@ window_t *init_window(size_t seq_size){
     return w;
 }
 
-l_err slide_window(window_t *w, size_t sl_size) {
-    w->to_ack_start = (w->to_ack_start + sl_size) % w->seq_sz;
-    return LD_OK;
-}
-
-window_item_t **get_items_in_window(window_t *w){
-    window_item_t **items_ptr = calloc(w->win_size, sizeof(void *));
-
-    for (int i = 0; i < w->win_size; i++){
-        items_ptr[i] = &w->items[(w->to_ack_start + i) % w->seq_sz];
-    }
-    return items_ptr;
-}
-
-l_err put_window_item(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq){
+l_err window_put(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq){
     if (w->avail_size == 0) return LD_ERR_INTERNAL;
     w->items[w->avail_start].cos = cos;
     w->items[w->avail_start].buf = buf;
-    w->items[w->avail_start].need_retran = FALSE;
     w->items[w->avail_start].is_ack = FALSE;
 
     *seq = w->avail_start;
@@ -105,7 +90,7 @@ window_item_t *pop_frag_window_item(window_t *w, size_t sz) {
 }
 
 
-l_err check_put_window_item(window_t *w, window_pop_t *pop) {
+l_err window_put_ctx(window_t *w, window_ctx_t *pop) {
     window_item_t *p_item = &w->items[pop->pid];
     // if(p_item->buf == NULL) {
     //     log_error("Wrong Window Item by %d", pop->pid);
@@ -131,11 +116,11 @@ l_err check_put_window_item(window_t *w, window_pop_t *pop) {
     return LD_OK;
 }
 
-window_pop_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz) {
+window_ctx_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz) {
     window_item_t *p_item = &w->items[w->to_ack_start % w->seq_sz];
     if (p_item->buf == NULL || w->avail_size == 0)  return NULL;
 
-    window_pop_t *pop_out = calloc(1, sizeof(window_pop_t));
+    window_ctx_t *pop_out = calloc(1, sizeof(window_ctx_t));
     pop_out->pid = w->to_ack_start;
     pop_out->is_rst = p_item->offset != 0 ?  FALSE : TRUE;
 
@@ -177,7 +162,7 @@ l_err free_window_item(window_item_t *wi) {
     return LD_OK;
 }
 
-l_err free_window_pop(window_pop_t *pop) {
+l_err free_window_pop(window_ctx_t *pop) {
     if (pop) {
         free_buffer(pop->buf);
         free(pop);

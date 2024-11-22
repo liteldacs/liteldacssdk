@@ -11,7 +11,6 @@ typedef struct window_item_s {
     uint8_t cos;
     uint8_t offset;
     buffer_t *buf;
-    bool need_retran;
     bool is_ack;
 } window_item_t;
 
@@ -23,7 +22,7 @@ typedef struct window_pop_s {
     uint16_t offset;
     bool is_rst;
     bool is_lfr;
-}window_pop_t;
+}window_ctx_t;
 
 /**
 *
@@ -43,17 +42,17 @@ typedef struct window_s{
 
 window_t *init_window(size_t seq_size);
 
-l_err put_window_item(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq);
+l_err window_put(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq);
 
 // window_item_t **get_items_in_window(window_t *w);
 
 uint8_t get_window_end(window_t *w);
 
 
-l_err check_put_window_item(window_t *w, window_pop_t *pop);
+l_err window_put_ctx(window_t *w, window_ctx_t *pop);
 
-window_pop_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz);
+window_ctx_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz);
 
-l_err free_window_pop(window_pop_t *pop);
+l_err free_window_pop(window_ctx_t *pop);
 
 #endif //LD_WINDOW_H
