@@ -10,7 +10,7 @@
 l_err free_window_item(window_item_t *wi);
 
 uint8_t get_window_end(window_t *w){
-    return (w->win_start + w->win_size) % w->seq_sz;
+    return (w->to_ack_start + w->win_size) % w->seq_sz;
 }
 
 window_t *init_window(size_t seq_size){
@@ -19,7 +19,7 @@ window_t *init_window(size_t seq_size){
     w->seq_sz = w->avail_size = seq_size;
     w->win_size = seq_size >> 1;
 
-    w->win_start = w->avail_start = 0;
+    w->to_ack_start = w->to_send_start = w->avail_start = 0;
 
     w->put_mutex = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
     if (w->put_mutex == NULL) {
@@ -42,7 +42,7 @@ window_t *init_window(size_t seq_size){
 }
 
 l_err slide_window(window_t *w, size_t sl_size) {
-    w->win_start = (w->win_start + sl_size) % w->seq_sz;
+    w->to_ack_start = (w->to_ack_start + sl_size) % w->seq_sz;
     return LD_OK;
 }
 
@@ -50,17 +50,17 @@ window_item_t **get_items_in_window(window_t *w){
     window_item_t **items_ptr = calloc(w->win_size, sizeof(void *));
 
     for (int i = 0; i < w->win_size; i++){
-        items_ptr[i] = &w->items[(w->win_start + i) % w->seq_sz];
+        items_ptr[i] = &w->items[(w->to_ack_start + i) % w->seq_sz];
     }
     return items_ptr;
 }
-
-
 
 l_err put_window_item(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq){
     if (w->avail_size == 0) return LD_ERR_INTERNAL;
     w->items[w->avail_start].cos = cos;
     w->items[w->avail_start].buf = buf;
+    w->items[w->avail_start].need_retran = FALSE;
+    w->items[w->avail_start].is_ack = FALSE;
 
     *seq = w->avail_start;
 
@@ -73,14 +73,14 @@ l_err put_window_item(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq){
 window_item_t *pop_window_item(window_t *w) {
     if (w->avail_size == w->seq_sz)    return NULL;
     window_item_t *wi = calloc(1, sizeof(window_item_t));
-    window_item_t *p_item = &w->items[w->win_start % w->seq_sz];
+    window_item_t *p_item = &w->items[w->to_ack_start % w->seq_sz];
 
     p_item->offset = p_item->buf->len;
 
     memcpy(wi, p_item, sizeof(window_item_t));
     memset(p_item, 0, sizeof(window_item_t));
 
-    w->win_start = (w->win_start + 1) % w->seq_sz;
+    w->to_ack_start = (w->to_ack_start + 1) % w->seq_sz;
     w->avail_size++;
 
     pthread_cond_signal(w->put_cond);
@@ -91,7 +91,7 @@ window_item_t *pop_window_item(window_t *w) {
 window_item_t *pop_frag_window_item(window_t *w, size_t sz) {
     if (w->avail_size == w->seq_sz)    return NULL;
     window_item_t *wi = calloc(1, sizeof(window_item_t));
-    window_item_t *p_item = &w->items[w->win_start % w->seq_sz];
+    window_item_t *p_item = &w->items[w->to_ack_start % w->seq_sz];
 
 
     wi->cos = p_item->cos;
@@ -103,6 +103,7 @@ window_item_t *pop_frag_window_item(window_t *w, size_t sz) {
 
     return wi;
 }
+
 
 l_err check_put_window_item(window_t *w, window_pop_t *pop) {
     window_item_t *p_item = &w->items[pop->pid];
@@ -131,13 +132,14 @@ l_err check_put_window_item(window_t *w, window_pop_t *pop) {
 }
 
 window_pop_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz) {
-    window_item_t *p_item = &w->items[w->win_start % w->seq_sz];
+    window_item_t *p_item = &w->items[w->to_ack_start % w->seq_sz];
     if (p_item->buf == NULL || w->avail_size == 0)  return NULL;
 
-    window_item_t *item = NULL;
     window_pop_t *pop_out = calloc(1, sizeof(window_pop_t));
-    pop_out->pid = w->win_start;
+    pop_out->pid = w->to_ack_start;
     pop_out->is_rst = p_item->offset != 0 ?  FALSE : TRUE;
+
+    window_item_t *item = NULL;
 
     if (p_item->buf->len <= *avail_buf_sz) {
         if ((item = pop_window_item(w)) == NULL) {

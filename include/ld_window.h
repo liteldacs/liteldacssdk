@@ -11,6 +11,8 @@ typedef struct window_item_s {
     uint8_t cos;
     uint8_t offset;
     buffer_t *buf;
+    bool need_retran;
+    bool is_ack;
 } window_item_t;
 
 
@@ -28,8 +30,12 @@ typedef struct window_pop_s {
 */
 typedef struct window_s{
     window_item_t *items;
-    size_t seq_sz, avail_size, win_size;
-    uint8_t win_start, avail_start;
+    size_t  seq_sz,         /* the total size */
+            avail_size,     /* the empty slot of window */
+            win_size;       /* the window size */
+    uint8_t to_ack_start,   /* the send-but-unacked start position */
+            to_send_start,  /* the unsend-but-in-window start position */
+            avail_start;    /* the first empty position */
 
     pthread_mutex_t *put_mutex;
     pthread_cond_t *put_cond;
