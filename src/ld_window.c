@@ -145,7 +145,7 @@ static window_item_t *window_out_get(window_t *w) {
     return wi;
 }
 
-static buffer_t *window_in_get(window_t *w) {
+buffer_t *window_in_get(window_t *w) {
     buffer_t *buf = NULL;
     for (int i = 0; i < w->win_size; i++) {
         window_item_t *p_item = &w->items[(w->to_recv_start + i) % w->seq_sz];
@@ -158,6 +158,15 @@ static buffer_t *window_in_get(window_t *w) {
             break;
         }
     }
+
+    /* slide window */
+    uint8_t to_recv = w->to_recv_start;
+    while (w->items[to_recv].is_processed == TRUE) {
+        clear_window_item(&w->items[to_recv]);
+        to_recv = (to_recv + 1 ) % w->seq_sz;
+        w->to_recv_start = to_recv;
+    }
+
     return buf;
 }
 

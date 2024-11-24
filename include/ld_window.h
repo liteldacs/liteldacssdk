@@ -51,16 +51,15 @@ window_t *init_window(size_t seq_size);
 
 l_err window_put(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq);
 
-// window_item_t **get_items_in_window(window_t *w);
-
-uint8_t window_end(window_t *w);
-
-
-l_err window_ack_item(window_t *w, uint8_t PID);
-
 l_err window_put_ctx(window_t *w, window_ctx_t *ctx);
 
 window_ctx_t *window_check_get(window_t *w, int64_t *avail_buf_sz);
+
+buffer_t *window_in_get(window_t *w);
+
+uint8_t window_end(window_t *w);
+
+l_err window_ack_item(window_t *w, uint8_t PID);
 
 l_err free_window_ctx(window_ctx_t *ctx);
 
