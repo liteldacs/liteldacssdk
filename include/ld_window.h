@@ -11,7 +11,13 @@ typedef struct window_item_s {
     uint8_t cos;
     uint8_t offset;
     buffer_t *buf;
+
+    /* for output window */
     bool is_ack;
+
+    /* for input window */
+    bool is_processed;
+    bool all_recv;
 } window_item_t;
 
 
@@ -34,6 +40,7 @@ typedef struct window_s{
             win_size;       /* the window size */
     uint8_t to_ack_start,   /* the send-but-unacked start position */
             to_send_start,  /* the unsend-but-in-window start position */
+            to_recv_start,  /* for receiving window */
             avail_start;    /* the first empty position */
 
     pthread_mutex_t *put_mutex;
@@ -46,13 +53,15 @@ l_err window_put(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq);
 
 // window_item_t **get_items_in_window(window_t *w);
 
-uint8_t get_window_end(window_t *w);
+uint8_t window_end(window_t *w);
 
 
-l_err window_put_ctx(window_t *w, window_ctx_t *pop);
+l_err window_ack_item(window_t *w, uint8_t PID);
 
-window_ctx_t *check_pop_window_item(window_t *w, int64_t *avail_buf_sz);
+l_err window_put_ctx(window_t *w, window_ctx_t *ctx);
 
-l_err free_window_pop(window_ctx_t *pop);
+window_ctx_t *window_check_get(window_t *w, int64_t *avail_buf_sz);
+
+l_err free_window_ctx(window_ctx_t *ctx);
 
 #endif //LD_WINDOW_H
