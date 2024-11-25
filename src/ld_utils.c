@@ -11,7 +11,7 @@ void generate_rand(uint8_t *rand, size_t len) {
 //#ifdef  USE_CRYCARD
 //    km_generate_random(rand, len);
 //#elif UNUSE_CRYCARD
-    rand_bytes(rand, len);
+//    rand_bytes(rand, len);
 //#endif
 }
 
