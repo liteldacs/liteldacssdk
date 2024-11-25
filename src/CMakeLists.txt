@@ -11,7 +11,7 @@ add_library(${PROJECT_NAME} STATIC ${SRC_LIST})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/global)
 
-target_link_libraries(${PROJECT_NAME} LINK_PUBLIC pthread)
+target_link_libraries(${PROJECT_NAME} LINK_PUBLIC pthread gmssl)
 
 #cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
 #IF (${PRETTY_NAME} MATCHES "CentOS")
