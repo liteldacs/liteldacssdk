@@ -11,11 +11,6 @@
 
 void get_time(char *time_str, enum TIME_MOD t_mod);
 
-void generate_rand(uint8_t *rand, size_t len);
-
-uint64_t generate_urand(size_t rand_bits_sz);
-
-void generate_nrand(uint8_t *rand, size_t sz);
 
 int32_t memrchr(const buffer_t *buf, uint8_t target);
 
