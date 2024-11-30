@@ -5,23 +5,12 @@
 #include "ld_config.h"
 
 
-config_t config = {
-        .port = 8081,
-        .debug = FALSE,
-        .timeout = 30,
-        .worker = 4,
-        .ip_ver = IPVERSION_4,
-        .init_fl_freq = 960.0,
-        .log_dir = "../../log",
-        .use_http = FALSE,
-        .auto_auth = TRUE,
-        .UA = 0,
-};
 
 
-int parse_config(char *yaml_path) {
+
+int parse_config(config_t *config, char *yaml_path) {
     init_config();
-    parser(yaml_path); /* Parse the path */
+    parser(config, yaml_path); /* Parse the path */
     /* Check if requested coil loops number is consistent with config file  */
     /* parsed_loops( &nlp, argv, &coil );*/
     return EXIT_SUCCESS;
@@ -33,7 +22,7 @@ void init_config() {
 void realloc_coil() {
 }
 
-void parser(char *yaml_path) {
+void parser(config_t *config, char *yaml_path) {
     int i = 0;
     /* Open file & declare libyaml types */
     FILE *fp = fopen(yaml_path, "r");
@@ -47,7 +36,7 @@ void parser(char *yaml_path) {
     do {
         parse_next(&parser, &event); /* Parse new event */
         /* Decide what to do with each event */
-        event_switch(&seq_status, &map_seq, &parser, &event, fp);
+        event_switch(config, &seq_status, &map_seq, &parser, &event, fp);
         if (event.type != YAML_STREAM_END_EVENT) {
             yaml_event_delete(&event);
         }
@@ -57,7 +46,7 @@ void parser(char *yaml_path) {
     clean_prs(fp, &parser, &event); /* clean parser & close file */
 }
 
-void event_switch(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) {
+void event_switch(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) {
     switch (event->type) {
         case YAML_STREAM_START_EVENT:
             break;
@@ -85,7 +74,7 @@ void event_switch(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser
                    event->data.alias.anchor);
             exit(EXIT_FAILURE);
         case YAML_SCALAR_EVENT:
-            to_data(seq_status, map_seq, parser, event, fp);
+            to_data(config, seq_status, map_seq, parser, event, fp);
             break;
         case YAML_NO_EVENT:
             puts(" ERROR: No event!");
@@ -93,7 +82,7 @@ void event_switch(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser
     }
 }
 
-void to_data(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) {
+void to_data(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) {
     char *buf = (char *) event->data.scalar.value;
 
     /* Dictionary */
@@ -116,13 +105,13 @@ void to_data(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yam
         parse_next(parser, event);
         char *role_str = (char *) event->data.scalar.value;
         if (!strcmp(role_str, "as")) {
-            config.role = LD_AS;
+            config->role = LD_AS;
         } else if (!strcmp(role_str, "gs")) {
-            config.role = LD_GS;
+            config->role = LD_GS;
         } else if (!strcmp(role_str, "gsc")) {
-            config.role = LD_GSC;
+            config->role = LD_GSC;
         }  else if (!strcmp(role_str, "sgw")) {
-            config.role = LD_SGW;
+            config->role = LD_SGW;
         } else {
             log_fatal("Bad role");
             clean_prs(fp, parser, event);
@@ -131,51 +120,51 @@ void to_data(bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yam
     } else if (!strcmp(buf, ua)) {
         yaml_event_delete(event);
         parse_next(parser, event);
-        config.UA = atoi((char *) event->data.scalar.value);
+        config->UA = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(buf, port)) {
         yaml_event_delete(event);
         parse_next(parser, event);
-        config.port = atoi((char *) event->data.scalar.value);
+        config->port = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(buf, addr)) {
         yaml_event_delete(event);
         parse_next(parser, event);
         {
-            zero(config.addr);
-            strcpy(config.addr, (char *)event->data.scalar.value);
+            zero(config->addr);
+            strcpy(config->addr, (char *)event->data.scalar.value);
         }
-        //config.addr = (char *)event->data.scalar.value;
+        //config->addr = (char *)event->data.scalar.value;
     }  else if (!strcmp(buf, sgw_port)) {
         yaml_event_delete(event);
         parse_next(parser, event);
-        config.sgw_port = atoi((char *) event->data.scalar.value);
+        config->sgw_port = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(buf, sgw_addr)) {
         yaml_event_delete(event);
         parse_next(parser, event);
         {
-            zero(config.sgw_addr);
-            strcpy(config.sgw_addr, (char *)event->data.scalar.value);
+            zero(config->sgw_addr);
+            strcpy(config->sgw_addr, (char *)event->data.scalar.value);
         }
-        //config.addr = (char *)event->data.scalar.value;
+        //config->addr = (char *)event->data.scalar.value;
     } else if (!strcmp(buf, http_port)) {
         yaml_event_delete(event);
         parse_next(parser, event);
-        config.http_port = atoi((char *) event->data.scalar.value);
+        config->http_port = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(buf, auto_auth)) {
         yaml_event_delete(event);
         parse_next(parser, event);
-        config.auto_auth = atoi((char *) event->data.scalar.value) == 1 ? TRUE : FALSE;
+        config->auto_auth = atoi((char *) event->data.scalar.value) == 1 ? TRUE : FALSE;
     } else if (!strcmp(buf, debug)) {
         yaml_event_delete(event);
         parse_next(parser, event);
-        config.debug = atoi((char *) event->data.scalar.value);
+        config->debug = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(buf, init_fl_freq)) {
         yaml_event_delete(event);
         parse_next(parser, event);
-        config.init_fl_freq = atof((char *) event->data.scalar.value);
+        config->init_fl_freq = atof((char *) event->data.scalar.value);
     } else if (!strcmp(buf, init_rl_freq)) {
         yaml_event_delete(event);
         parse_next(parser, event);
-        config.init_rl_freq = atof((char *) event->data.scalar.value);
+        config->init_rl_freq = atof((char *) event->data.scalar.value);
     } else if (!strcmp(buf, http_tag)) {
         yaml_event_delete(event);
         parse_next(parser, event);

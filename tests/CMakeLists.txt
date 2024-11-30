@@ -9,7 +9,7 @@ set(tests
         #        stateMachine
 #        multitimer
         #        crc
-        #        buffer
+                buffer
         #        pbs
         #        pqueue
         base64

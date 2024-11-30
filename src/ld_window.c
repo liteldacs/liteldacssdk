@@ -137,6 +137,8 @@ static window_item_t *window_out_get(window_t *w) {
     wi->buf = init_buffer_unptr();
     CLONE_BY_BUFFER(*wi->buf, *p_item->buf);
 
+    log_warn("!!!!!!!!!!!!!!!!!!!!!!))))))))) %d", w->to_send_start);
+
     w->to_send_start = (w->to_send_start + 1) % w->seq_sz;
     w->avail_size++;
 
@@ -187,7 +189,9 @@ static window_item_t *window_out_get_frag(window_t *w, size_t sz) {
 
 window_ctx_t *window_check_get(window_t *w, int64_t *avail_buf_sz) {
     window_item_t *p_item = &w->items[w->to_send_start % w->seq_sz];
-    if (p_item->buf == NULL || w->avail_size == 0)  return NULL;
+    if (p_item->buf == NULL) {
+        return NULL;
+    }
 
     window_ctx_t *pop_out = calloc(1, sizeof(window_ctx_t));
     pop_out->pid = w->to_send_start;
@@ -212,7 +216,6 @@ window_ctx_t *window_check_get(window_t *w, int64_t *avail_buf_sz) {
         pop_out->is_lfr = FALSE;
     }
 
-    // log_warn("!!!!!!! OFFSET %d", item->offset);
     pop_out->cos = item->cos;
     pop_out->buf = init_buffer_unptr();
     CLONE_BY_BUFFER(*pop_out->buf, *item->buf);

@@ -85,13 +85,15 @@ extern config_t config;
 
 /* Prototypes --------------------------------------------------------- */
 
+int parse_config(config_t *config, char *yaml_path) ;
+
 /* Struct initialization */
 void init_config();
 
 void realloc_coil();
 
 /* Global parser */
-void parser(char *yaml_path);
+void parser(config_t *config, char *yaml_path);
 
 /* Parser utilities */
 void init_prs(FILE *fp, yaml_parser_t *parser);
@@ -101,13 +103,11 @@ void parse_next(yaml_parser_t *parser, yaml_event_t *event);
 void clean_prs(FILE *fp, yaml_parser_t *parser, yaml_event_t *event);
 
 /* Parser actions */
-void event_switch(bool *seq_status, unsigned int *map_seq,
-                  yaml_parser_t *parser, yaml_event_t *event, FILE *fp);
+void event_switch(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yaml_event_t *event, FILE *fp);
 
-void to_data(bool *seq_status, unsigned int *map_seq,
+void to_data(config_t *config, bool *seq_status, unsigned int *map_seq,
              yaml_parser_t *parser, yaml_event_t *event, FILE *fp);
 
 
-int parse_config(char *yaml_path);
 
 #endif //TEST_CLIENT_CONFIG_H

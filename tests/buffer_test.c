@@ -1,7 +1,8 @@
 //
 // Created by 邹嘉旭 on 2024/1/5.
 //
-#include <util_core.h>
+#include <ld_buffer.h>
+#include <ld_log.h>
 
 static uint8_t u1[3] = {0x01, 0x03, 0x05};
 static uint8_t u2[3] = {0x01, 0x03, 0x05};
@@ -29,36 +30,38 @@ void test_empty_cat() {
     fprintf(stderr, "\nREMAIN: %zu\n", buf->free);
 }
 
-struct a_s {
-    buffer_t *b1;
-    buffer_t *b2;
-    buffer_t *b3;
-    buffer_t *b4;
-    buffer_t *b5;
-};
+typedef struct sdu_s_s {
+    size_t blk_n;
+    buffer_t **blks;
+} sdu_s_t;
 
-typedef struct test_pdu_s {
-    // buffer_t *sdu_1_6;
-    // buffer_t *sdu_7_12;
-    // buffer_t *sdu_13_21;
-    // buffer_t *sdu_22_27;
-    uint16_t slot_ser;
-    buffer_t *dc;
-} test_pdu_t;
+static inline sdu_s_t *create_sdu_s(size_t blk_n) {
+    sdu_s_t *sdu_s_p = malloc(sizeof(sdu_s_t));
+    sdu_s_p->blk_n = blk_n;
+    sdu_s_p->blks = calloc(sdu_s_p->blk_n, sizeof(buffer_t *));
+    return sdu_s_p;
+}
+static inline void free_sdu_s(void *p) {
+    sdu_s_t *sdu_p = p;
+    if (sdu_p) {
+        if (sdu_p->blks) {
+            FREE_BUF_ARRAY_DEEP2(sdu_p->blks, sdu_p->blk_n);
+        }
+        free(sdu_p);
+    }
+}
+
+#define BC_BLK_N 3
+#define BC_BLK_LEN_1_3  528 >> 3  //66 Bytes
+#define BC_BLK_LEN_2    1000 >> 3 //125 Bytes
+#define BC_BLK_FORCE_REMAIN 272 >> 8 // 272 = 4 + 256 + 4 + 8
 
 int main() {
-    test_pdu_t test_pdus;
-    // INIT_BUF_ARRAY_UNPTR(&test_pdus, 4);
+    sdu_s_t *sdus = create_sdu_s(BC_BLK_N);
+    sdus->blks[0] = init_buffer_ptr(BC_BLK_LEN_1_3);
+    sdus->blks[1] = init_buffer_ptr(BC_BLK_LEN_2);
+    sdus->blks[2] = init_buffer_ptr(BC_BLK_LEN_1_3);
 
-    // FREE_BUF_ARRAY_DEEP(&test_pdus, 4);
-    INIT_BUF_ARRAY_UNPTR(&test_pdus.dc, 1);
-    FREE_BUF_ARRAY_DEEP(&test_pdus.dc, 1);
 
-    log_warn("%p", test_pdus.dc);
-
-    char *str = "ABCD";
-    buffer_t *buf = init_buffer_unptr();
-    CLONE_TO_CHUNK(*buf, str, strlen(str));
-    free_buffer(buf);
-    log_warn("%s %p", buf->ptr, buf);
+    free_sdu_s(sdus);
 }
