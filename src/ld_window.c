@@ -137,8 +137,6 @@ static window_item_t *window_out_get(window_t *w) {
     wi->buf = init_buffer_unptr();
     CLONE_BY_BUFFER(*wi->buf, *p_item->buf);
 
-    log_warn("!!!!!!!!!!!!!!!!!!!!!!))))))))) %d", w->to_send_start);
-
     w->to_send_start = (w->to_send_start + 1) % w->seq_sz;
     w->avail_size++;
 

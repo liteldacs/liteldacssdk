@@ -5,7 +5,6 @@
 
 #include "ld_bitset.h"
 
-
 ld_bitset_t *init_bitset(const size_t res_num, const size_t res_sz, init_resources_func init_func,
                          free_func free_func) {
     ld_bitset_t *bitset = malloc(sizeof(ld_bitset_t));
@@ -68,13 +67,24 @@ bool bs_all_alloced(ld_bitset_t *set) {
             return FALSE; // 发现有未分配的资源
         }
     }
+    // for (int i = 0; i < set->res_num; i++) {
+    //     if ((set->bitset[i / 8] & (1 << (i % 8))) == 0) {
+    //         return FALSE; // 发现有未分配的资源
+    //     }
+    // }
     return TRUE;
 }
 
 int bs_get_alloced(ld_bitset_t *set) {
     int ret = 0;
+    // for (int i = 0; i < set->res_num; i++) {
+    //     if ((set->bitset[i / 8] & (1 << (i % 8))) == 1) {
+    //         ret++;
+    //     }
+    // }
+
     for (int i = 0; i < set->res_num; i++) {
-        if ((set->bitset[i / 8] & (1 << (i % 8))) == 1) {
+        if ((set->bitset[i / 8] & (1 << (i % 8))) != 0) {
             ret++;
         }
     }
@@ -83,8 +93,14 @@ int bs_get_alloced(ld_bitset_t *set) {
 
 int bs_get_highest(ld_bitset_t *set) {
     int highest = 0;
+    // for (int i = 0; i < set->res_num; i++) {
+    //     if ((set->bitset[i / 8] & (1 << (i % 8))) == 1) {
+    //         highest = i;
+    //     }
+    // }
+
     for (int i = 0; i < set->res_num; i++) {
-        if ((set->bitset[i / 8] & (1 << (i % 8))) == 1) {
+        if ((set->bitset[i / 8] & (1 << (i % 8))) != 0) {
             highest = i;
         }
     }

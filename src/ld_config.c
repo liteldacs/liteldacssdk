@@ -4,10 +4,6 @@
 
 #include "ld_config.h"
 
-
-
-
-
 int parse_config(config_t *config, char *yaml_path) {
     init_config();
     parser(config, yaml_path); /* Parse the path */
