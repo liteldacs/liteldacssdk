@@ -33,7 +33,7 @@ void bs_free_resource(ld_bitset_t *set, uint8_t index);
 
 bool bs_judge_resource(ld_bitset_t *set, uint8_t index);
 
-bool bs_all_alloced(ld_bitset_t *set);
+bool bs_all_empty(ld_bitset_t *set);
 
 int bs_get_alloced(ld_bitset_t *set);
 

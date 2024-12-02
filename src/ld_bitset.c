@@ -61,7 +61,7 @@ bool bs_judge_resource(ld_bitset_t *set, uint8_t index) {
     return FALSE;
 }
 
-bool bs_all_alloced(ld_bitset_t *set) {
+bool bs_all_empty(ld_bitset_t *set) {
     for (int i = 0; i < set->res_num; i++) {
         if ((set->bitset[i / 8] & (1 << (i % 8))) == 1) {
             return FALSE; // 发现有未分配的资源

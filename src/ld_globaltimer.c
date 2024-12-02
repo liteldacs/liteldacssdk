@@ -213,11 +213,11 @@ static void unregister_timer_event(ld_cycle_define_t *cyc_def) {
     // ld_unlock(&slot->mutex);
     cyc_def->l_sem = NULL;
 
-    // if (bs_all_alloced(slot->l_sems_set) == TRUE) {
-    //     timer_stop(cyc_def->timer);
-    // }
+    if (bs_get_alloced(slot->l_sems_set) == 0) {
+        timer_stop(cyc_def->timer);
+    }
 
-    timer_stop(cyc_def->timer);
+    // timer_stop(cyc_def->timer);
 
     pthread_cancel(cyc_def->th);
 }
