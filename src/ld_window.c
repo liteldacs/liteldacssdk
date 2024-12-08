@@ -199,6 +199,7 @@ window_ctx_t *window_check_get(window_t *w, int64_t *avail_buf_sz) {
 
     if (p_item->buf->len <= *avail_buf_sz) {
         if ((item = window_out_get(w)) == NULL) {
+            free_window_ctx(pop_out);
             free_window_item(item);
             return NULL;
         }
@@ -208,6 +209,7 @@ window_ctx_t *window_check_get(window_t *w, int64_t *avail_buf_sz) {
 
     } else {
         if ((item = window_out_get_frag(w, *avail_buf_sz)) == NULL) {
+            free_window_ctx(pop_out);
             free_window_item(item);
             return NULL;
         }
