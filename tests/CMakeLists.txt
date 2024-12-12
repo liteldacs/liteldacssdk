@@ -30,6 +30,7 @@ set(tests
         rbuffer
 #        rkeygen
         test
+        mps
 )
 
 cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
@@ -38,6 +39,7 @@ IF (${PRETTY_NAME} MATCHES "Ubuntu")
     #    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=leak -g")
 ENDIF ()
 INCLUDE_DIRECTORIES(/usr/local/include/ldacs)
+
 enable_testing()
 foreach (name ${tests})
     add_test(NAME ${name} COMMAND ${name}test)

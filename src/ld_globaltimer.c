@@ -166,7 +166,7 @@ static void *wait_sem_func(void *args) {
     ld_cycle_define_t *cyc_def = args;
     int64_t handle_times = cyc_def->to_times;
 
-    while (handle_times == TIMER_INFINITE || handle_times--) {
+    while ( *cyc_def->stop_flag == FALSE && (handle_times == TIMER_INFINITE || handle_times--)) {
         //等待信号量
         if (handle_times == TIMER_INFINITE || cyc_def->is_instant == FALSE || handle_times != cyc_def->to_times - 1) {
             if (cyc_def->l_sem) {
