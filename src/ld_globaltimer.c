@@ -220,4 +220,5 @@ static void unregister_timer_event(ld_cycle_define_t *cyc_def) {
     // timer_stop(cyc_def->timer);
 
     pthread_cancel(cyc_def->th);
+    // pthread_detach(pthread_self());
 }
