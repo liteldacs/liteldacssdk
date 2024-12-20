@@ -156,6 +156,7 @@ l_err init_global_timer(ld_globaltimer_t *g_timer, const uint64_t time_val, cons
         uint64_t remainder = curr_time % sync_micro;
         uint64_t to_sync =  curr_time + (sync_micro-remainder);
         while (get_microtime() < to_sync) {}
+        log_error("}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
     }
 
     pthread_create(&g_timer->th, NULL, timer_thread_func, g_timer);
