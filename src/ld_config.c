@@ -108,6 +108,8 @@ void to_data(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_par
             config->role = LD_GSC;
         }  else if (!strcmp(role_str, "sgw")) {
             config->role = LD_SGW;
+        }  else if (!strcmp(role_str, "attack")) {
+            config->role = LD_SGW;
         } else {
             log_fatal("Bad role");
             clean_prs(fp, parser, event);

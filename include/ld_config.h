@@ -21,7 +21,7 @@ typedef enum {
     LD_GS = 0x1,
     LD_GSC = 0x2,
     LD_SGW = 0x3,
-    LD_HTTP = 0x4,
+    LD_ATTACK = 0x4,
 } ldacs_roles;
 
 static const char *roles_str[] = {
@@ -29,7 +29,7 @@ static const char *roles_str[] = {
     "LD_GS",
     "LD_GSC",
     "LD_SGW",
-    "LD_HTTP",
+    "LD_ATTACK",
 };
 
 typedef enum {
