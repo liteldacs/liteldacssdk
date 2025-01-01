@@ -10,6 +10,14 @@
 #include <stdint.h>        /* Definition of uint64_t */
 #include <utils/ld_log.h>
 
+void *mf_event(void *args);
+void *sf_event(void *args);
+void singal_event(evutil_socket_t fd, short event, void *arg);
+
+static gtimer_cb_t sf_cb = {sf_event, NULL, TIMER_INFINITE};
+static gtimer_cb_t mf_cb = {mf_event, NULL, 4};
+static stimer_cb_t mf_singal_cb = {singal_event, NULL, 40000000};
+
 
 void singal_event(evutil_socket_t fd, short event, void *arg) {
     log_warn("++++++++");
@@ -17,7 +25,7 @@ void singal_event(evutil_socket_t fd, short event, void *arg) {
 
 void *mf_event(void *args) {
     log_warn("!!! MF EVENT");
-    register_stimer(singal_event, NULL, 40000000);
+    register_stimer(&mf_singal_cb);
     return NULL;
 }
 
@@ -25,9 +33,10 @@ void *mf_event(void *args) {
 void *sf_event(void *args) {
     log_warn("!!! SF EVENT");
     ld_gtimer_handler_t ntimer;
-    init_gtimer(&ntimer);
-    register_gtimer(&ntimer, MF_TIMER_TAG, 0, 60000000, 0, 0);
-    register_gtimer_event(&ntimer, MF_TIMER_TAG, mf_event, NULL, 4);
+    init_gtimer(&ntimer, 0, 60000000, 0, 0);
+    // register_gtimer(&ntimer, 0, 60000000, 0, 0);
+    // register_gtimer_event(&ntimer, MF_TIMER_TAG, mf_event, NULL, 4);
+    register_gtimer_event(&ntimer, &mf_cb);
 
     start_gtimer(&ntimer);
     sleep(100000);
@@ -44,10 +53,11 @@ main(int argc, char *argv[])
 {
     log_init(LOG_DEBUG,  "../../log", "test");
     ld_gtimer_handler_t ntimer;
-    init_gtimer(&ntimer);
+    init_gtimer(&ntimer, 0, 240000000, 0 , 0);
 
-    register_gtimer(&ntimer, SF_TIMER_TAG, 0, 240000000, 0, 0);
-    register_gtimer_event(&ntimer, SF_TIMER_TAG, sf_event, NULL, TIMER_INFINITE);
+    // register_gtimer(&ntimer, 0, 240000000, 0, 0);
+    // register_gtimer_event(&ntimer, SF_TIMER_TAG, sf_event, NULL, TIMER_INFINITE);
+    register_gtimer_event(&ntimer, &sf_cb);
     start_gtimer(&ntimer);
 
     // sleep(3);

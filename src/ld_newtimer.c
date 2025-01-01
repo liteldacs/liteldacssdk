@@ -26,22 +26,20 @@ static void *gtimer_event_dispatch(void *args) {
 
         uint64_t expirations;
         for (int i = 0; i < num_events; i++) {
-            for (int j = 0; j < gtimer->node_count; j++) {
-                timer_node_t *node = &gtimer->nodes[j];
-                if (events[i].data.fd == node->timer_fd) {
-                    ssize_t ret = read(node->timer_fd, &expirations, sizeof(expirations));
-                    if (ret != sizeof(expirations)) {
-                        perror("read");
-                        return NULL;
-                    }
+            gtimer_node_t *node = &gtimer->nodes;
+            if (events[i].data.fd == node->timer_fd) {
+                ssize_t ret = read(node->timer_fd, &expirations, sizeof(expirations));
+                if (ret != sizeof(expirations)) {
+                    perror("read");
+                    return NULL;
+                }
 
-                    for (int k = 0; k < node->cb_count; k++) {
-                        gtimer_cb_t *cbt = &node->cbs[k];
-                        if (cbt->to_times == TIMER_INFINITE || cbt->has_times < cbt->to_times) {
-                            pthread_create(&cbt->th, NULL, cbt->cb, cbt->args);
-                            pthread_detach(cbt->th);
-                            cbt->has_times++;
-                        }
+                for (int k = 0; k < node->cb_count; k++) {
+                    gtimer_cb_t *cbt = &node->cbs[k];
+                    if (cbt->to_times == TIMER_INFINITE || cbt->has_times < cbt->to_times) {
+                        pthread_create(&cbt->th, NULL, cbt->cb, cbt->args);
+                        pthread_detach(cbt->th);
+                        cbt->has_times++;
                     }
                 }
             }
@@ -51,10 +49,10 @@ static void *gtimer_event_dispatch(void *args) {
 }
 
 static void *stimer_event_dispatch(void *arg) {
-    ld_stimer_handler_t *stimer = calloc(1, sizeof(ld_stimer_handler_t));
-    stimer->cb = ((ld_stimer_handler_t *)arg)->cb;
-    stimer->args = ((ld_stimer_handler_t *)arg)->args;
-    stimer->nano = ((ld_stimer_handler_t *)arg)->nano;
+    stimer_cb_t *stimer = calloc(1, sizeof(stimer_cb_t));
+    stimer->cb = ((stimer_cb_t *)arg)->cb;
+    stimer->args = ((stimer_cb_t *)arg)->args;
+    stimer->nano = ((stimer_cb_t *)arg)->nano;
 
     struct timeval tv;
 
@@ -79,32 +77,9 @@ static void *stimer_event_dispatch(void *arg) {
     return NULL;
 }
 
-l_err init_gtimer(ld_gtimer_handler_t *gtimer) {
-    memset(gtimer, 0, sizeof(ld_gtimer_handler_t));
-
-    // 创建 epoll 实例
-    gtimer->epoll_fd = epoll_create1(0);
-    if (gtimer->epoll_fd == -1) {
-        perror("epoll_create1");
-        return LD_ERR_INTERNAL;
-    }
-    return LD_OK;
-}
-
-l_err register_stimer(stimer_cb cb, void *args, uint64_t nano) {
-
-    pthread_t th;
-    pthread_create(&th, NULL, stimer_event_dispatch, &(ld_stimer_handler_t){cb, args, nano});
-    usleep(100);
-    pthread_detach(th);
-    return LD_OK;
-}
-
-l_err register_gtimer(ld_gtimer_handler_t *gtimer, int timer_tag, int64_t sec, int64_t nsec, int64_t wait_sec, int64_t wait_nsec) {
-
-    timer_node_t *node = &gtimer->nodes[gtimer->node_count];
+static l_err register_gtimer(ld_gtimer_handler_t *gtimer, int64_t sec, int64_t nsec, int64_t wait_sec, int64_t wait_nsec) {
+    gtimer_node_t *node = &gtimer->nodes;
     node->cb_count = 0;
-    node->timer_tag = timer_tag;
 
     if ((node->timer_fd = timerfd_create(CLOCK_MONOTONIC, 0)) == -1) {
         log_error("timerfd_create");
@@ -129,21 +104,40 @@ l_err register_gtimer(ld_gtimer_handler_t *gtimer, int timer_tag, int64_t sec, i
         return 1;
     }
 
-    gtimer->node_count++;
-
     return LD_OK;
 }
 
-l_err register_gtimer_event(ld_gtimer_handler_t *gtimer, int timer_tag, gtimer_cb cb, void *args, uint64_t to_times) {
-    for (int i = 0; i < gtimer->node_count; i++) {
-        if (timer_tag == gtimer->nodes[i].timer_tag) {
-            timer_node_t *node = &gtimer->nodes[i];
-            node->cbs[node->cb_count] = (gtimer_cb_t){cb, args, to_times, 0};
+
+l_err init_gtimer(ld_gtimer_handler_t *gtimer, int64_t sec, int64_t nsec, int64_t wait_sec, int64_t wait_nsec) {
+    memset(gtimer, 0, sizeof(ld_gtimer_handler_t));
+
+    // 创建 epoll 实例
+    gtimer->epoll_fd = epoll_create1(0);
+    if (gtimer->epoll_fd == -1) {
+        perror("epoll_create1");
+        return LD_ERR_INTERNAL;
+    }
+
+    register_gtimer(gtimer, sec, nsec, wait_sec, wait_nsec);
+    return LD_OK;
+}
+
+l_err register_stimer(stimer_cb_t *timer_cb) {
+
+    pthread_t th;
+    pthread_create(&th, NULL, stimer_event_dispatch, timer_cb);
+    usleep(100);
+    pthread_detach(th);
+    return LD_OK;
+}
+
+
+l_err register_gtimer_event(ld_gtimer_handler_t *gtimer, gtimer_cb_t *timer_cb) {
+    timer_cb->has_times = 0;
+            gtimer_node_t *node = &gtimer->nodes;
+            node->cbs[node->cb_count] = *timer_cb;
             node->cb_count++;
             return LD_OK;
-        }
-    }
-    return LD_ERR_NULL;
 }
 
 void start_gtimer(ld_gtimer_handler_t *gtimer) {
