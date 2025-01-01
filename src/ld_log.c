@@ -41,6 +41,7 @@ static struct {
     int level;
     bool quiet;
     Callback callbacks[MAX_CALLBACKS];
+    struct timespec g_start;
 } L;
 
 
@@ -54,14 +55,37 @@ static const char *level_colors[] = {
 };
 #endif
 
+static size_t get_current_time(char *buf, size_t max_len) {
+	struct timespec curr;
+	int secs, nsecs;
+	if (clock_gettime(CLOCK_MONOTONIC, &curr) == -1)
+		log_error("clock_gettime");
+
+	secs = curr.tv_sec - L.g_start.tv_sec;
+	nsecs = curr.tv_nsec - L.g_start.tv_nsec;
+	if (nsecs < 0) {
+		secs--;
+		nsecs += 1000000000;
+	}
+
+    snprintf(buf, max_len, "%d.%09d", secs, nsecs);
+
+    return strlen(buf);
+}
+
 
 static void stdout_callback(log_Event *ev) {
     char buf[32];
-    buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &ev->time)] = '\0';
+    // buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &ev->time)] = '\0';
+    buf[get_current_time(buf, sizeof(buf))] = '\0';
 #ifdef LOG_USE_COLOR
+    // fprintf(
+    //     ev->udata, "[%s.%06ld] %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
+    //     buf, ev->tv.tv_usec, level_colors[ev->level], level_strings[ev->level],
+    //     ev->file, ev->line);
     fprintf(
-        ev->udata, "[%s.%06ld] %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
-        buf, ev->tv.tv_usec, level_colors[ev->level], level_strings[ev->level],
+        ev->udata, "[%s] %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
+        buf, level_colors[ev->level], level_strings[ev->level],
         ev->file, ev->line);
 #else
     fprintf(
@@ -206,6 +230,9 @@ l_err log_init(int level, const char *log_dir, const char *role_str) {
     size_t p_sz, f_sz = 0;
     FILE *path_stream = NULL;
     FILE *file_stream = NULL;
+
+    if (clock_gettime(CLOCK_MONOTONIC, &L.g_start) == -1)
+        log_error("clock_gettime");
 
     /* check the basic log directory */
     if (check_path(log_dir)) {

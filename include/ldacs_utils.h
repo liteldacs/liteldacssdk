@@ -21,7 +21,7 @@
 #include "ld_pqueue.h"
 #include "ld_thread.h"
 #include "ld_crc.h"
-#include "ld_globaltimer.h"
+//#include "ld_globaltimer.h"
 #include "ld_statemachine.h"
 #include "ld_list.h"
 #include "ld_file.h"

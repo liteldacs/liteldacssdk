@@ -47,7 +47,7 @@
 #define MICROSECOND (1000L)
 #define NANOSECOND  (1L)
 
-#define TIMER_INFINITE -1
+#define TIMER_INFINITE 0
 
 /* Forward declarations */
 typedef struct single_timer single_timer_t;

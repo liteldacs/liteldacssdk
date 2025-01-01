@@ -143,6 +143,7 @@ static timer_slots_t *init_timer_slot(struct event_base *base, uint64_t nano) {
 l_err init_global_timer(ld_globaltimer_t *g_timer, const uint64_t time_val, const uint64_t sync_micro) {
 
     evthread_use_pthreads();
+    pthread_mutex_init(&g_timer->mutex, NULL);
     ld_lock(&g_timer->mutex);
     g_timer->ev_base = event_base_new();
     ld_unlock(&g_timer->mutex);
@@ -173,7 +174,6 @@ static void *wait_sem_func(void *args) {
                 ld_sem_wait(cyc_def->l_sem);
             }
         }
-
         cyc_def->func(cyc_def->args);
     }
 
@@ -208,17 +208,22 @@ static void unregister_timer_event(ld_cycle_define_t *cyc_def) {
 
     //slot的sem数组中的对应位置置空
     ld_sem_destory(cyc_def->l_sem);
-    bs_free_resource(slot->l_sems_set, cyc_def->l_sem - (ld_sem_t *) slot->l_sems_set->resources);
-
-    // ld_unlock(&slot->mutex);
     cyc_def->l_sem = NULL;
 
-    if (bs_get_alloced(slot->l_sems_set) == 0) {
-        timer_stop(cyc_def->timer);
+    if (slot != NULL) {
+        bs_free_resource(slot->l_sems_set, cyc_def->l_sem - (ld_sem_t *) slot->l_sems_set->resources);
+
+        // ld_unlock(&slot->mutex);
+
+        // if (bs_get_alloced(slot->l_sems_set) == 0) {
+        //     timer_stop(cyc_def->timer);
+        // }
     }
+            timer_stop(cyc_def->timer);
 
     // timer_stop(cyc_def->timer);
 
-    pthread_cancel(cyc_def->th);
+    // pthread_cancel(cyc_def->th);
+    pthread_exit(NULL);
     // pthread_detach(pthread_self());
 }

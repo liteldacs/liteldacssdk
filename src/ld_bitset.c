@@ -5,6 +5,8 @@
 
 #include "ld_bitset.h"
 
+#include <ld_log.h>
+
 ld_bitset_t *init_bitset(const size_t res_num, const size_t res_sz, init_resources_func init_func,
                          free_func free_func) {
     ld_bitset_t *bitset = malloc(sizeof(ld_bitset_t));
@@ -14,6 +16,7 @@ ld_bitset_t *init_bitset(const size_t res_num, const size_t res_sz, init_resourc
     bitset->free_func = free_func;
 
     if (init_func == NULL || free_func == NULL || init_func(bitset) != LD_OK) {
+        log_warn("++++++++++++++++++++++++++");
         free(bitset->bitset);
         free(bitset);
         return NULL;
