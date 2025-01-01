@@ -12,13 +12,15 @@
 
 void *mf_event(void *args);
 void *sf_event(void *args);
+void *mf_event2(void *args);
 void singal_event(evutil_socket_t fd, short event, void *arg);
 
 static gtimer_cb_t sf_cb = {sf_event, NULL, TIMER_INFINITE};
 static gtimer_cb_t mf_cb = {mf_event, NULL, 4};
+static gtimer_cb_t mf_cb2 = {mf_event2, NULL, 4};
 static ld_stimer_t mf_singal_cb = {singal_event, NULL, 40000000};
-static ld_gtimer_t sf_global_cb = {{.it_interval = {0, 240000000}, .it_value = {0, 0}}, {&sf_cb}, 1};
-static ld_gtimer_t mf_global_cb = {{.it_interval = {0, 60000000}, .it_value = {0, 0}}, {&mf_cb}, 1};
+static ld_gtimer_t sf_global_cb = {{.it_interval = {0, 240000000}, .it_value = {0, 0}}};
+static ld_gtimer_t mf_global_cb = {{.it_interval = {0, 60000000}, .it_value = {0, 0}}};
 
 
 void singal_event(evutil_socket_t fd, short event, void *arg) {
@@ -36,6 +38,8 @@ void *sf_event(void *args) {
     log_warn("!!! SF EVENT");
 
     register_gtimer(&mf_global_cb);
+    register_gtimer_event(&mf_global_cb, &mf_cb);
+    register_gtimer_event(&mf_global_cb, &mf_cb2);
     return NULL;
 }
 
@@ -49,5 +53,6 @@ main(int argc, char *argv[])
 {
     log_init(LOG_DEBUG,  "../../log", "test");
     register_gtimer(&sf_global_cb);
+    register_gtimer_event(&sf_global_cb, &sf_cb);
     sleep(100000);
 }

@@ -52,16 +52,18 @@ typedef struct ld_stimer_s {
 
 typedef struct ld_gtimer_s {
     struct itimerspec spec;
-    gtimer_cb_t *timer_cb[10];
-    size_t cb_count;
     pthread_t th;
+    ld_gtimer_handler_t *handler;
 }ld_gtimer_t;
 
 
 // void start_gtimer( struct itimerspec *spec, gtimer_cb_t *timer_cb[], size_t cb_count);
 l_err register_gtimer(ld_gtimer_t *gtimer);
 
+l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_cb_t *timer_cb);
+
 l_err register_stimer(ld_stimer_t *timer_cb);
+
 
 
 #endif //LD_NEWTIMER_H

@@ -114,55 +114,56 @@ static l_err init_gtimer_node(ld_gtimer_handler_t *gtimer, struct itimerspec *sp
 }
 
 
-l_err init_gtimer(ld_gtimer_handler_t *gtimer, struct itimerspec *spec) {
-    memset(gtimer, 0, sizeof(ld_gtimer_handler_t));
+ld_gtimer_handler_t *init_gtimer_handler(struct itimerspec *spec) {
+    ld_gtimer_handler_t *ghandler = calloc(1, sizeof(ld_gtimer_handler_t));
 
     // 创建 epoll 实例
-    gtimer->epoll_fd = epoll_create1(0);
-    if (gtimer->epoll_fd == -1) {
+    ghandler->epoll_fd = epoll_create1(0);
+    if (ghandler->epoll_fd == -1) {
         perror("epoll_create1");
-        return LD_ERR_INTERNAL;
+        return NULL;
     }
 
-    init_gtimer_node(gtimer, spec);
-    return LD_OK;
+    init_gtimer_node(ghandler, spec);
+    return ghandler;
 }
 
 l_err register_stimer(ld_stimer_t *timer_cb) {
 
     pthread_t th;
     pthread_create(&th, NULL, stimer_event_dispatch, timer_cb);
-    usleep(100);
     pthread_detach(th);
     return LD_OK;
 }
 
 
-l_err register_gtimer_event(ld_gtimer_handler_t *gtimer, gtimer_cb_t *timer_cb[], size_t cb_count) {
-    gtimer_node_t *node = &gtimer->nodes;
-    for (int i = 0; i < cb_count; i++) {
-        timer_cb[i]->has_times = 0;
-        node->cbs[node->cb_count] = *timer_cb[i];
-        node->cb_count++;
-    }
+l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_cb_t *timer_cb) {
+    if (gtimer->handler == NULL)    return LD_ERR_NULL;
+
+    gtimer_node_t *node = &gtimer->handler->nodes;
+    timer_cb->has_times = 0;
+    node->cbs[node->cb_count] = *timer_cb;
+    node->cb_count++;
     return LD_OK;
 }
 
 static void *start_gtimer(void *args) {
     ld_gtimer_t *gtimer = args;
-    if (gtimer->spec.it_value.tv_nsec == 0) {
-        gtimer->spec.it_value.tv_nsec =1;
-    }
-    ld_gtimer_handler_t timer_handle;
-    init_gtimer(&timer_handle, &gtimer->spec);
 
-    register_gtimer_event(&timer_handle, gtimer->timer_cb, gtimer->cb_count);
-    gtimer_event_dispatch(&timer_handle);
+    gtimer_event_dispatch(gtimer->handler);
+    free(gtimer->handler);
+    gtimer->handler = NULL;
     return NULL;
 }
 
 l_err register_gtimer(ld_gtimer_t *gtimer) {
+    if (gtimer->spec.it_value.tv_nsec == 0) {
+        gtimer->spec.it_value.tv_nsec =1;
+    }
+    gtimer->handler = init_gtimer_handler(&gtimer->spec);
+
     pthread_create(&gtimer->th, NULL, start_gtimer, gtimer);
     pthread_detach(gtimer->th);
+
     return LD_OK;
 }
