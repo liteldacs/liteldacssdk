@@ -33,7 +33,6 @@ typedef struct gtimer_cb_s {
 
 typedef struct gtimer_node_s {
     int timer_fd;
-    struct itimerspec timer_spec;
     gtimer_cb_t cbs[10];
     size_t cb_count;
     struct epoll_event event;
@@ -45,24 +44,24 @@ typedef struct ld_gtimer_handler_s {
     pthread_t th;
 } ld_gtimer_handler_t;
 
-typedef struct ld_stimer_handler_s {
+typedef struct ld_stimer_s {
     stimer_cb cb;
     void *args;
     uint64_t nano;
-} stimer_cb_t;
+} ld_stimer_t;
+
+typedef struct ld_gtimer_s {
+    struct itimerspec spec;
+    gtimer_cb_t *timer_cb[10];
+    size_t cb_count;
+    pthread_t th;
+}ld_gtimer_t;
 
 
-l_err init_gtimer(ld_gtimer_handler_t *gtimer, int64_t sec, int64_t nsec, int64_t wait_sec, int64_t wait_nsec);
+// void start_gtimer( struct itimerspec *spec, gtimer_cb_t *timer_cb[], size_t cb_count);
+l_err register_gtimer(ld_gtimer_t *gtimer);
 
-
-// l_err register_gtimer(ld_gtimer_handler_t *gtimer, int64_t sec, int64_t nsec, int64_t wait_sec,
-//                       int64_t wait_nsec);
-
-l_err register_gtimer_event(ld_gtimer_handler_t *gtimer, gtimer_cb_t *timer_cb);
-
-void start_gtimer(ld_gtimer_handler_t *gtimer);
-
-l_err register_stimer(stimer_cb_t *timer_cb);
+l_err register_stimer(ld_stimer_t *timer_cb);
 
 
 #endif //LD_NEWTIMER_H

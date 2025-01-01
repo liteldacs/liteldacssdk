@@ -17,7 +17,6 @@ void *thread_func(void *arg) {
 
 // 事件回调函数
 void timeout_cb(evutil_socket_t fd, short event, void *arg) {
-    log_warn("!!!!!!!!!!");
     printf("Timeout occurred\n");
     sleep(5);
 }
