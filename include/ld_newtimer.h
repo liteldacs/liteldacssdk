@@ -29,11 +29,11 @@ typedef struct gtimer_cb_s {
     uint64_t to_times;
     uint64_t has_times;
     pthread_t th;
-}gtimer_cb_t;
+}gtimer_ev_t;
 
 typedef struct gtimer_node_s {
     int timer_fd;
-    gtimer_cb_t cbs[10];
+    gtimer_ev_t cbs[10];
     size_t cb_count;
     struct epoll_event event;
 } gtimer_node_t;
@@ -48,7 +48,7 @@ typedef struct ld_stimer_s {
     stimer_cb cb;
     void *args;
     uint64_t nano;
-} ld_stimer_t;
+} stimer_ev_t;
 
 typedef struct ld_gtimer_s {
     struct itimerspec spec;
@@ -57,12 +57,11 @@ typedef struct ld_gtimer_s {
 }ld_gtimer_t;
 
 
-// void start_gtimer( struct itimerspec *spec, gtimer_cb_t *timer_cb[], size_t cb_count);
 l_err register_gtimer(ld_gtimer_t *gtimer);
 
-l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_cb_t *timer_cb);
+l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_ev_t *timer_cb);
 
-l_err register_stimer(ld_stimer_t *timer_cb);
+l_err register_stimer(stimer_ev_t *timer_cb);
 
 
 

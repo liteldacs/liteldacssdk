@@ -76,17 +76,17 @@ static size_t get_current_time(char *buf, size_t max_len) {
 
 static void stdout_callback(log_Event *ev) {
     char buf[32];
-    // buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &ev->time)] = '\0';
-    buf[get_current_time(buf, sizeof(buf))] = '\0';
+    buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &ev->time)] = '\0';
+    // buf[get_current_time(buf, sizeof(buf))] = '\0';
 #ifdef LOG_USE_COLOR
-    // fprintf(
-    //     ev->udata, "[%s.%06ld] %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
-    //     buf, ev->tv.tv_usec, level_colors[ev->level], level_strings[ev->level],
-    //     ev->file, ev->line);
     fprintf(
-        ev->udata, "[%s] %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
-        buf, level_colors[ev->level], level_strings[ev->level],
+        ev->udata, "[%s.%06ld] %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
+        buf, ev->tv.tv_usec, level_colors[ev->level], level_strings[ev->level],
         ev->file, ev->line);
+    // fprintf(
+    //     ev->udata, "[%s] %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
+    //     buf, level_colors[ev->level], level_strings[ev->level],
+    //     ev->file, ev->line);
 #else
     fprintf(
             ev->udata, "%s %-5s %s:%d: ",

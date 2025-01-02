@@ -35,7 +35,7 @@ static void *gtimer_event_dispatch(void *args) {
                 }
 
                 for (int k = 0; k < node->cb_count; k++) {
-                    gtimer_cb_t *cbt = &node->cbs[k];
+                    gtimer_ev_t *cbt = &node->cbs[k];
                     if (cbt->to_times == TIMER_INFINITE || cbt->has_times < cbt->to_times) {
                         pthread_create(&cbt->th, NULL, cbt->cb, cbt->args);
                         pthread_detach(cbt->th);
@@ -60,10 +60,10 @@ static void *gtimer_event_dispatch(void *args) {
 }
 
 static void *stimer_event_dispatch(void *arg) {
-    ld_stimer_t *stimer = calloc(1, sizeof(ld_stimer_t));
-    stimer->cb = ((ld_stimer_t *)arg)->cb;
-    stimer->args = ((ld_stimer_t *)arg)->args;
-    stimer->nano = ((ld_stimer_t *)arg)->nano;
+    stimer_ev_t *stimer = calloc(1, sizeof(stimer_ev_t));
+    stimer->cb = ((stimer_ev_t *)arg)->cb;
+    stimer->args = ((stimer_ev_t *)arg)->args;
+    stimer->nano = ((stimer_ev_t *)arg)->nano;
 
     struct timeval tv;
 
@@ -128,7 +128,7 @@ ld_gtimer_handler_t *init_gtimer_handler(struct itimerspec *spec) {
     return ghandler;
 }
 
-l_err register_stimer(ld_stimer_t *timer_cb) {
+l_err register_stimer(stimer_ev_t *timer_cb) {
 
     pthread_t th;
     pthread_create(&th, NULL, stimer_event_dispatch, timer_cb);
@@ -137,7 +137,7 @@ l_err register_stimer(ld_stimer_t *timer_cb) {
 }
 
 
-l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_cb_t *timer_cb) {
+l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_ev_t *timer_cb) {
     if (gtimer->handler == NULL)    return LD_ERR_NULL;
 
     gtimer_node_t *node = &gtimer->handler->nodes;
