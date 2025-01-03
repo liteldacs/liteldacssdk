@@ -39,7 +39,7 @@ void *sf_event(void *args) {
 
     register_gtimer(&mf_global_cb);
     register_gtimer_event(&mf_global_cb, &mf_cb);
-    register_gtimer_event(&mf_global_cb, &mf_cb2);
+    // register_gtimer_event(&mf_global_cb, &mf_cb2);
     return NULL;
 }
 

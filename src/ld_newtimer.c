@@ -15,10 +15,10 @@ static void nano_to_timeval(struct timeval *timev, const uint64_t nano_time) {
 }
 
 static void *gtimer_event_dispatch(void *args) {
-    ld_gtimer_handler_t *gtimer = args;
+    ld_gtimer_handler_t *ghandler = args;
     while (1) {
         struct epoll_event events[10];
-        int num_events = epoll_wait(gtimer->epoll_fd, events, 10, -1); // 阻塞等待事件
+        int num_events = epoll_wait(ghandler->epoll_fd, events, 10, -1); // 阻塞等待事件
         if (num_events == -1) {
             perror("epoll_wait");
             return NULL;
@@ -26,7 +26,7 @@ static void *gtimer_event_dispatch(void *args) {
 
         uint64_t expirations;
         for (int i = 0; i < num_events; i++) {
-            gtimer_node_t *node = &gtimer->nodes;
+            gtimer_node_t *node = &ghandler->nodes;
             if (events[i].data.fd == node->timer_fd) {
                 ssize_t ret = read(node->timer_fd, &expirations, sizeof(expirations));
                 if (ret != sizeof(expirations)) {
@@ -40,6 +40,7 @@ static void *gtimer_event_dispatch(void *args) {
                         pthread_create(&cbt->th, NULL, cbt->cb, cbt->args);
                         pthread_detach(cbt->th);
                         cbt->has_times++;
+                    }else {
                     }
                 }
             }
@@ -52,6 +53,11 @@ static void *gtimer_event_dispatch(void *args) {
                 }
             }
             if (all_finished == TRUE) {
+                if (epoll_ctl(ghandler->epoll_fd, EPOLL_CTL_DEL, node->timer_fd, NULL) == -1) {
+                    perror("epoll_ctl");
+                    return NULL;
+                }
+                close(node->timer_fd);
                 return NULL;
             }
         }
@@ -60,30 +66,28 @@ static void *gtimer_event_dispatch(void *args) {
 }
 
 static void *stimer_event_dispatch(void *arg) {
-    stimer_ev_t *stimer = calloc(1, sizeof(stimer_ev_t));
-    stimer->cb = ((stimer_ev_t *)arg)->cb;
-    stimer->args = ((stimer_ev_t *)arg)->args;
-    stimer->nano = ((stimer_ev_t *)arg)->nano;
+    ld_stimer_t *stimer = arg;
 
     struct timeval tv;
 
     evthread_use_pthreads();
-    struct event_base *base = event_base_new();
-    nano_to_timeval(&tv, stimer->nano);
+    stimer->base = event_base_new();
+    nano_to_timeval(&tv, stimer->timer_ev->nano);
 
-    struct event *ev = event_new(base, -1, 0, stimer->cb, stimer->args);
-    if (!ev) {
+    stimer->ev = event_new(stimer->base, -1, 0, stimer->timer_ev->cb, stimer->timer_ev->args);
+    if (!stimer->ev) {
         fprintf(stderr, "Could not create event!\n");
         return NULL;
     }
-    event_add(ev, &tv);
-    event_base_dispatch(base);
+    event_add(stimer->ev, &tv);
+    event_base_dispatch(stimer->base);
 
     // 清理资源
-    event_free(ev);
-    event_base_free(base);
+    event_free(stimer->ev);
+    event_base_free(stimer->base);
 
     free(stimer);
+    arg = NULL;
 
     return NULL;
 }
@@ -128,12 +132,16 @@ ld_gtimer_handler_t *init_gtimer_handler(struct itimerspec *spec) {
     return ghandler;
 }
 
-l_err register_stimer(stimer_ev_t *timer_cb) {
-
+ld_stimer_t *register_stimer(stimer_ev_t *timer_cb) {
     pthread_t th;
-    pthread_create(&th, NULL, stimer_event_dispatch, timer_cb);
+
+    ld_stimer_t *stimer = calloc(1, sizeof(ld_stimer_t));
+    stimer->timer_ev = timer_cb;
+
+
+    pthread_create(&th, NULL, stimer_event_dispatch, stimer);
     pthread_detach(th);
-    return LD_OK;
+    return stimer;
 }
 
 
@@ -151,6 +159,7 @@ static void *start_gtimer(void *args) {
     ld_gtimer_t *gtimer = args;
 
     gtimer_event_dispatch(gtimer->handler);
+    close(gtimer->handler->epoll_fd);
     free(gtimer->handler);
     gtimer->handler = NULL;
     return NULL;

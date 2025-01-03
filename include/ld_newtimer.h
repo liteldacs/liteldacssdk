@@ -44,11 +44,17 @@ typedef struct ld_gtimer_handler_s {
     pthread_t th;
 } ld_gtimer_handler_t;
 
-typedef struct ld_stimer_s {
+typedef struct stimer_ev_s {
     stimer_cb cb;
     void *args;
     uint64_t nano;
 } stimer_ev_t;
+
+typedef struct ld_stimer_s {
+    stimer_ev_t *timer_ev;
+    struct event_base *base;
+    struct event *ev;
+}ld_stimer_t;
 
 typedef struct ld_gtimer_s {
     struct itimerspec spec;
@@ -61,7 +67,7 @@ l_err register_gtimer(ld_gtimer_t *gtimer);
 
 l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_ev_t *timer_cb);
 
-l_err register_stimer(stimer_ev_t *timer_cb);
+ld_stimer_t *register_stimer(stimer_ev_t *timer_cb);
 
 
 
