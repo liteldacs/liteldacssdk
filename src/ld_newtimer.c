@@ -54,7 +54,7 @@ static void *gtimer_event_dispatch(void *args) {
             }
             if (all_finished == TRUE) {
                 if (epoll_ctl(ghandler->epoll_fd, EPOLL_CTL_DEL, node->timer_fd, NULL) == -1) {
-                    perror("epoll_ctl");
+                    perror("epoll_ctl_del");
                     return NULL;
                 }
                 close(node->timer_fd);
@@ -110,7 +110,7 @@ static l_err init_gtimer_node(ld_gtimer_handler_t *gtimer, struct itimerspec *sp
     node->event.data.fd = node->timer_fd;
 
     if (epoll_ctl(gtimer->epoll_fd, EPOLL_CTL_ADD, node->timer_fd, &node->event) == -1) {
-        perror("epoll_ctl");
+        perror("epoll_ctl_add");
         return 1;
     }
 
@@ -160,6 +160,7 @@ static void *start_gtimer(void *args) {
 
     gtimer_event_dispatch(gtimer->handler);
     close(gtimer->handler->epoll_fd);
+
     free(gtimer->handler);
     gtimer->handler = NULL;
     return NULL;
