@@ -242,7 +242,7 @@ l_err log_init(int level, const char *log_dir, const char *role_str) {
     path_stream = open_memstream(&log_path, &p_sz);
 
     /* get current date as log folder name of today */
-    get_time(time_str, LD_TIME_DAY);
+    get_time(time_str, LD_TIME_UNDERLINE, LD_TIME_DAY);
     fprintf(path_stream, "%s/%s", log_dir, time_str);
     fclose(path_stream);
     if (check_path(log_path)) {
@@ -252,7 +252,7 @@ l_err log_init(int level, const char *log_dir, const char *role_str) {
 
     file_stream = open_memstream(&log_file, &f_sz);
     /* get current second with role as log name */
-    get_time(time_str, LD_TIME_SEC);
+    get_time(time_str, LD_TIME_UNDERLINE,LD_TIME_SEC);
     fprintf(file_stream, "%s/%s_%s.log", log_path, time_str, role_str);
     fclose(file_stream);
 

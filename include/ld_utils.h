@@ -9,8 +9,7 @@
 #include "ld_buffer.h"
 #include "ld_util_def.h"
 
-void get_time(char *time_str, enum TIME_MOD t_mod);
-
+void get_time(char *time_str, enum TIME_MOD t_mod, enum TIME_PREC t_pesc);
 
 int32_t memrchr(const buffer_t *buf, uint8_t target);
 

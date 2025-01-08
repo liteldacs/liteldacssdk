@@ -65,11 +65,9 @@ int main() {
     cJSON *a = marshel_json(&outter, &outter_tmpl_desc);
 
     char *jstr = cJSON_PrintUnformatted(a);
-    cJSON_Delete(inner1_n);
-    cJSON_Delete(inner2_n);
+    log_warn("%s", jstr);
     cJSON_Delete(a);
 
-    log_warn("%s", jstr);
 
 
     cJSON *b = cJSON_Parse(jstr);
@@ -78,8 +76,6 @@ int main() {
 
 
     cJSON_Delete(b);
-    cJSON_Delete(outter2.array[0]);
-    cJSON_Delete(outter2.array[1]);
     free(jstr);
 
     exit(0);

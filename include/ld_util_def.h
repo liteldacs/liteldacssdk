@@ -52,15 +52,25 @@ enum complement_size {
 
 #define ACCURACY 0.001
 
-
 enum TIME_MOD {
-    LD_TIME_DAY = 0,
-    LD_TIME_SEC,
+    LD_TIME_UNDERLINE = 0,
+    LD_TIME_NORMAL
 };
 
-static const char *time_format[] = {
+enum TIME_PREC {
+    LD_TIME_DAY = 0,
+    LD_TIME_SEC,
+    LD_TIME_MICRO,
+};
+
+static const char *time_format[][2] = {
+    {
     "%Y_%m_%d",
     "%Y_%m_%d_%H_%M_%S",
+    },{
+    "%Y-%m-%d",
+    "%Y-%m-%d %H-%M-%S",
+    },
 };
 
 #endif //TEST_MSG_DEFINES_H
