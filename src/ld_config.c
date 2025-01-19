@@ -89,8 +89,9 @@ void to_data(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_par
     char *init_fl_freq = "init_fl_freq";
     char *init_rl_freq = "init_rl_freq";
     char *addr = "addr";
-    char *sgw_addr = "sgw_addr";
-    char *sgw_port = "sgw_port";
+    char *gsnf_addr = "gsnf_addr";
+    char *gsnf_addr_v6 = "gsnf_addr_v6";
+    char *gsnf_port = "gsnf_port";
 
     char *http_tag = "http";
     char *http_port = "http_port";
@@ -131,16 +132,24 @@ void to_data(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_par
             strcpy(config->addr, (char *)event->data.scalar.value);
         }
         //config->addr = (char *)event->data.scalar.value;
-    }  else if (!strcmp(buf, sgw_port)) {
+    }  else if (!strcmp(buf, gsnf_port)) {
         yaml_event_delete(event);
         parse_next(parser, event);
-        config->sgw_port = atoi((char *) event->data.scalar.value);
-    } else if (!strcmp(buf, sgw_addr)) {
+        config->gsnf_port = atoi((char *) event->data.scalar.value);
+    } else if (!strcmp(buf, gsnf_addr)) {
         yaml_event_delete(event);
         parse_next(parser, event);
         {
-            zero(config->sgw_addr);
-            strcpy(config->sgw_addr, (char *)event->data.scalar.value);
+            zero(config->gsnf_addr);
+            strcpy(config->gsnf_addr, (char *)event->data.scalar.value);
+        }
+        //config->addr = (char *)event->data.scalar.value;
+    }  else if (!strcmp(buf, gsnf_addr_v6)) {
+        yaml_event_delete(event);
+        parse_next(parser, event);
+        {
+            zero(config->gsnf_addr_v6);
+            strcpy(config->gsnf_addr_v6, (char *)event->data.scalar.value);
         }
         //config->addr = (char *)event->data.scalar.value;
     } else if (!strcmp(buf, http_port)) {

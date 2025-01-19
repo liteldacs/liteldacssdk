@@ -57,8 +57,9 @@ typedef struct config_s {
     uint16_t port; /* listen port */
     char gsc_addr[16];
     uint16_t gsc_port;
-    char sgw_addr[16];
-    uint16_t sgw_port;
+    char gsnf_addr[16];
+    char gsnf_addr_v6[16];
+    uint16_t gsnf_port;
 
     /* http */
     bool use_http;
