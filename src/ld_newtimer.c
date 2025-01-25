@@ -96,8 +96,8 @@ static void *stimer_event_dispatch(void *arg) {
     return NULL;
 }
 
-static l_err init_gtimer_node(ld_gtimer_handler_t *gtimer, struct itimerspec *spec) {
-    gtimer_node_t *node = &gtimer->nodes;
+static l_err init_gtimer_node(ld_gtimer_handler_t *ghandler, struct itimerspec *spec) {
+    gtimer_node_t *node = &ghandler->nodes;
     node->cb_count = 0;
 
     if ((node->timer_fd = timerfd_create(CLOCK_MONOTONIC, 0)) == -1) {
@@ -113,7 +113,7 @@ static l_err init_gtimer_node(ld_gtimer_handler_t *gtimer, struct itimerspec *sp
     node->event.events = EPOLLIN; // 监听可读事件
     node->event.data.fd = node->timer_fd;
 
-    if (epoll_ctl(gtimer->epoll_fd, EPOLL_CTL_ADD, node->timer_fd, &node->event) == -1) {
+    if (epoll_ctl(ghandler->epoll_fd, EPOLL_CTL_ADD, node->timer_fd, &node->event) == -1) {
         perror("epoll_ctl_add");
         return 1;
     }
@@ -150,10 +150,11 @@ ld_stimer_t *register_stimer(stimer_ev_t *timer_cb) {
 
 
 l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_ev_t *timer_cb) {
-    // log_warn("%p %p", gtimer->handler, gtimer);
     if (gtimer->handler == NULL) {
         return LD_ERR_NULL;
     }
+    /* delay 1ms to assure the gtimer dispatch thread has started. */
+    usleep(1000);
 
     gtimer_node_t *node = &gtimer->handler->nodes;
     timer_cb->has_times = 0;
