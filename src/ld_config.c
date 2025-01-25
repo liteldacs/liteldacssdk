@@ -110,7 +110,7 @@ void to_data(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_par
         }  else if (!strcmp(role_str, "sgw")) {
             config->role = LD_SGW;
         }  else if (!strcmp(role_str, "attack")) {
-            config->role = LD_SGW;
+            config->role = LD_ATTACK;
         } else {
             log_fatal("Bad role");
             clean_prs(fp, parser, event);

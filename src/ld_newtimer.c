@@ -46,7 +46,11 @@ static void *gtimer_event_dispatch(void *args) {
             }
 
             bool all_finished = TRUE;
+            if (node->cb_count == 0) {
+                continue;
+            }
             for (int j = 0; j < node->cb_count; j++) {
+                // log_warn("%d  %d", node->cbs[j].has_times, node->cbs[j].to_times);
                 if (node->cbs[j].to_times == TIMER_INFINITE || node->cbs[j].has_times != node->cbs[j].to_times) {
                     all_finished = FALSE;
                     break;
@@ -118,18 +122,18 @@ static l_err init_gtimer_node(ld_gtimer_handler_t *gtimer, struct itimerspec *sp
 }
 
 
-ld_gtimer_handler_t *init_gtimer_handler(struct itimerspec *spec) {
-    ld_gtimer_handler_t *ghandler = calloc(1, sizeof(ld_gtimer_handler_t));
+l_err init_gtimer_handler(struct itimerspec *spec, ld_gtimer_handler_t **ghandler) {
+    *ghandler = calloc(1, sizeof(ld_gtimer_handler_t));
 
     // 创建 epoll 实例
-    ghandler->epoll_fd = epoll_create1(0);
-    if (ghandler->epoll_fd == -1) {
+    (*ghandler)->epoll_fd = epoll_create1(0);
+    if ((* ghandler)->epoll_fd == -1) {
         perror("epoll_create1");
-        return NULL;
+        return LD_ERR_NULL;
     }
 
-    init_gtimer_node(ghandler, spec);
-    return ghandler;
+    init_gtimer_node(*ghandler, spec);
+    return LD_OK;
 }
 
 ld_stimer_t *register_stimer(stimer_ev_t *timer_cb) {
@@ -146,7 +150,10 @@ ld_stimer_t *register_stimer(stimer_ev_t *timer_cb) {
 
 
 l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_ev_t *timer_cb) {
-    if (gtimer->handler == NULL)    return LD_ERR_NULL;
+    // log_warn("%p %p", gtimer->handler, gtimer);
+    if (gtimer->handler == NULL) {
+        return LD_ERR_NULL;
+    }
 
     gtimer_node_t *node = &gtimer->handler->nodes;
     timer_cb->has_times = 0;
@@ -170,7 +177,8 @@ l_err register_gtimer(ld_gtimer_t *gtimer) {
     if (gtimer->spec.it_value.tv_nsec == 0) {
         gtimer->spec.it_value.tv_nsec =1;
     }
-    gtimer->handler = init_gtimer_handler(&gtimer->spec);
+    init_gtimer_handler(&gtimer->spec, &gtimer->handler);
+    // log_warn("%p", gtimer->handler);
 
     pthread_create(&gtimer->th, NULL, start_gtimer, gtimer);
     pthread_detach(gtimer->th);
