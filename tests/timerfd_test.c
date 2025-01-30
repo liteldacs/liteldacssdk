@@ -20,7 +20,7 @@ static gtimer_ev_t mf_cb = {mf_event, NULL, 4};
 static gtimer_ev_t mf_cb2 = {mf_event2, NULL, 4};
 static stimer_ev_t mf_singal_cb = {singal_event, NULL, 40000000};
 static ld_gtimer_t sf_global_cb = {{.it_interval = {0, 240000000}, .it_value = {0, 0}}};
-static ld_gtimer_t mf_global_cb = {{.it_interval = {0, 60000000}, .it_value = {0, 0}}};
+static ld_gtimer_t mf_global_cb = {{.it_interval = {0, 58000000}, .it_value = {0, 0}}};
 
 
 void singal_event(evutil_socket_t fd, short event, void *arg) {
@@ -48,9 +48,9 @@ void *mf_event2(void *args) {
     return NULL;
 }
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
+    log_warn("!!!!!!!!!!!!");
     log_init(LOG_DEBUG,  "../../log", "test");
     register_gtimer(&sf_global_cb);
     register_gtimer_event(&sf_global_cb, &sf_cb);

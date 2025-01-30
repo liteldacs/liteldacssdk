@@ -94,6 +94,12 @@ l_err window_put_ctx(window_t *w, window_ctx_t *ctx) {
     uint8_t win_end = (w->to_recv_start + w->win_size) % w->seq_sz;
 
     if (!(ctx->pid >= w->to_recv_start && ctx->pid < win_end) || (win_end  < w->to_recv_start && (ctx->pid < win_end || ctx->pid >= w->to_recv_start) )) {
+        if (!(ctx->pid >= w->to_recv_start && ctx->pid < win_end)) {
+            log_warn("=======");
+                log_warn("---------- %d %d", ctx->pid, w->to_recv_start);
+        }else{
+            log_warn("+++++++ ");
+        }
         return LD_ERR_INVALID;
     }
 

@@ -74,7 +74,7 @@ static void *stimer_event_dispatch(void *arg) {
 
     struct timeval tv;
 
-    evthread_use_pthreads();
+    // evthread_use_pthreads();
     stimer->base = event_base_new();
     nano_to_timeval(&tv, stimer->timer_ev->nano);
 
@@ -142,7 +142,6 @@ ld_stimer_t *register_stimer(stimer_ev_t *timer_cb) {
     ld_stimer_t *stimer = calloc(1, sizeof(ld_stimer_t));
     stimer->timer_ev = timer_cb;
 
-
     pthread_create(&th, NULL, stimer_event_dispatch, stimer);
     pthread_detach(th);
     return stimer;
@@ -174,12 +173,19 @@ static void *start_gtimer(void *args) {
     return NULL;
 }
 
+void unregister_gtimer(ld_gtimer_t *gtimer) {
+    pthread_cancel(gtimer->th);
+    close(gtimer->handler->epoll_fd);
+
+    free(gtimer->handler);
+    gtimer->handler = NULL;
+}
+
 l_err register_gtimer(ld_gtimer_t *gtimer) {
     if (gtimer->spec.it_value.tv_nsec == 0) {
         gtimer->spec.it_value.tv_nsec =1;
     }
     init_gtimer_handler(&gtimer->spec, &gtimer->handler);
-    // log_warn("%p", gtimer->handler);
 
     pthread_create(&gtimer->th, NULL, start_gtimer, gtimer);
     pthread_detach(gtimer->th);
