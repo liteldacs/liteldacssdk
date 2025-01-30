@@ -4,6 +4,8 @@
 
 #include "ld_newtimer.h"
 
+#include <ld_thread.h>
+
 /*
  * 根据纳秒计算微妙
  * @param timev
@@ -70,29 +72,28 @@ static void *gtimer_event_dispatch(void *args) {
 }
 
 static void *stimer_event_dispatch(void *arg) {
-    ld_stimer_t *stimer = arg;
-
+    stimer_ev_t *stimer= arg;
+    ld_stimer_handler_t *handler = &stimer->handler;
+    ld_lock(&handler->mutex);
     struct timeval tv;
+    evthread_use_pthreads();
+    handler->base = event_base_new();
+    nano_to_timeval(&tv, stimer->nano);
 
-    // evthread_use_pthreads();
-    stimer->base = event_base_new();
-    nano_to_timeval(&tv, stimer->timer_ev->nano);
-
-    stimer->ev = event_new(stimer->base, -1, 0, stimer->timer_ev->cb, stimer->timer_ev->args);
-    if (!stimer->ev) {
-        fprintf(stderr, "Could not create event!\n");
+    handler->ev = event_new(handler->base, -1, 0, stimer->cb, stimer->args);
+    if (!handler->ev) {
+        log_warn("Could not create event!\n");
         return NULL;
     }
-    event_add(stimer->ev, &tv);
-    event_base_dispatch(stimer->base);
+    event_add(handler->ev, &tv);
+
+    event_base_dispatch(handler->base);
 
     // 清理资源
-    event_free(stimer->ev);
-    event_base_free(stimer->base);
-
-    free(stimer);
-    arg = NULL;
-
+    event_free(handler->ev);
+    event_base_free(handler->base);
+    handler->base = NULL;
+    ld_unlock(&handler->mutex);
     return NULL;
 }
 
@@ -136,15 +137,15 @@ l_err init_gtimer_handler(struct itimerspec *spec, ld_gtimer_handler_t **ghandle
     return LD_OK;
 }
 
-ld_stimer_t *register_stimer(stimer_ev_t *timer_cb) {
-    pthread_t th;
+l_err register_stimer(stimer_ev_t *stimer) {
+    //
+    // ld_stimer_t *stimer = calloc(1, sizeof(ld_stimer_t));
+    // stimer->timer_ev = timer_cb;
+    ld_stimer_handler_t *handler = &stimer->handler;
 
-    ld_stimer_t *stimer = calloc(1, sizeof(ld_stimer_t));
-    stimer->timer_ev = timer_cb;
-
-    pthread_create(&th, NULL, stimer_event_dispatch, stimer);
-    pthread_detach(th);
-    return stimer;
+    pthread_create(&handler->th, NULL, stimer_event_dispatch, stimer);
+    pthread_detach(handler->th);
+    return LD_OK;
 }
 
 
@@ -185,6 +186,7 @@ l_err register_gtimer(ld_gtimer_t *gtimer) {
     if (gtimer->spec.it_value.tv_nsec == 0) {
         gtimer->spec.it_value.tv_nsec =1;
     }
+    ld_gtimer_handler_t *handler = gtimer->handler;
     init_gtimer_handler(&gtimer->spec, &gtimer->handler);
 
     pthread_create(&gtimer->th, NULL, start_gtimer, gtimer);

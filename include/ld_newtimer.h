@@ -21,9 +21,9 @@
 #define MF_TIMER_TAG 1
 
 typedef void *(*gtimer_cb)(void *);
-typedef void (*stimer_cb)(evutil_socket_t fd, short event, void *arg);
+typedef void (*ld_stimer_s)(evutil_socket_t fd, short event, void *arg);
 
-typedef struct gtimer_cb_s {
+typedef struct gtimer_ev_s {
     gtimer_cb cb;
     void *args;
     uint64_t to_times;
@@ -42,21 +42,25 @@ typedef struct ld_gtimer_handler_s {
     int epoll_fd;
     gtimer_node_t nodes;
     pthread_t th;
+    pthread_mutex_t mutex;
 } ld_gtimer_handler_t;
 
-typedef struct stimer_ev_s {
-    stimer_cb cb;
-    void *args;
-    uint64_t nano;
-} stimer_ev_t;
-
-typedef struct ld_stimer_s {
-    stimer_ev_t *timer_ev;
+typedef struct ld_stimer_handler_s {
+    // stimer_ev_t *timer_ev;
     struct event_base *base;
     struct event *ev;
-}ld_stimer_t;
+    pthread_t th;
+    pthread_mutex_t mutex;
+}ld_stimer_handler_t;
 
-typedef struct ld_gtimer_s {
+typedef struct stimer_ev_s {
+    ld_stimer_s cb;
+    void *args;
+    uint64_t nano;
+    ld_stimer_handler_t handler;
+} stimer_ev_t;
+
+typedef struct ld_gtimer_t {
     struct itimerspec spec;
     pthread_t th;
     ld_gtimer_handler_t *handler;
@@ -69,7 +73,8 @@ void unregister_gtimer(ld_gtimer_t *gtimer);
 
 l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_ev_t *timer_cb);
 
-ld_stimer_t *register_stimer(stimer_ev_t *timer_cb);
+// ld_stimer_t *register_stimer(stimer_ev_t *timer_cb);
+l_err register_stimer(stimer_ev_t *timer_cb);
 
 
 

@@ -48,11 +48,10 @@ void *mf_event2(void *args) {
     return NULL;
 }
 
-int main(int argc, char *argv[])
-{
-    log_warn("!!!!!!!!!!!!");
+int main() {
     log_init(LOG_DEBUG,  "../../log", "test");
     register_gtimer(&sf_global_cb);
     register_gtimer_event(&sf_global_cb, &sf_cb);
     sleep(100000);
 }
+
