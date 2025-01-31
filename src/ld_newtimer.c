@@ -22,6 +22,7 @@ static void *gtimer_event_dispatch(void *args) {
         struct epoll_event events[10];
         int num_events = epoll_wait(ghandler->epoll_fd, events, 10, -1); // 阻塞等待事件
         if (num_events == -1) {
+            if (errno == EINTR) continue;
             perror("epoll_wait");
             return NULL;
         }
@@ -123,17 +124,15 @@ static l_err init_gtimer_node(ld_gtimer_handler_t *ghandler, struct itimerspec *
 }
 
 
-l_err init_gtimer_handler(struct itimerspec *spec, ld_gtimer_handler_t **ghandler) {
-    *ghandler = calloc(1, sizeof(ld_gtimer_handler_t));
-
+l_err init_gtimer_handler(struct itimerspec *spec, ld_gtimer_handler_t *ghandler) {
     // 创建 epoll 实例
-    (*ghandler)->epoll_fd = epoll_create1(0);
-    if ((* ghandler)->epoll_fd == -1) {
+    ghandler->epoll_fd = epoll_create1(0);
+    if (ghandler->epoll_fd == -1) {
         perror("epoll_create1");
         return LD_ERR_NULL;
     }
 
-    init_gtimer_node(*ghandler, spec);
+    init_gtimer_node(ghandler, spec);
     return LD_OK;
 }
 
@@ -150,13 +149,10 @@ l_err register_stimer(stimer_ev_t *stimer) {
 
 
 l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_ev_t *timer_cb) {
-    if (gtimer->handler == NULL) {
-        return LD_ERR_NULL;
-    }
     /* delay 1ms to assure the gtimer dispatch thread has started. */
     usleep(1000);
 
-    gtimer_node_t *node = &gtimer->handler->nodes;
+    gtimer_node_t *node = &gtimer->handler.nodes;
     timer_cb->has_times = 0;
     node->cbs[node->cb_count] = *timer_cb;
     node->cb_count++;
@@ -165,32 +161,35 @@ l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_ev_t *timer_cb) {
 
 static void *start_gtimer(void *args) {
     ld_gtimer_t *gtimer = args;
+    ld_gtimer_handler_t *handler = &gtimer->handler;
+    ld_lock(&handler->mutex);
+    init_gtimer_handler(&gtimer->spec, handler);
 
-    gtimer_event_dispatch(gtimer->handler);
-    close(gtimer->handler->epoll_fd);
+    gtimer_event_dispatch(handler);
+    close(handler->epoll_fd);
 
-    free(gtimer->handler);
-    gtimer->handler = NULL;
+    memset(handler, 0, sizeof(ld_gtimer_handler_t));
+
+    ld_unlock(&handler->mutex);
     return NULL;
 }
 
-void unregister_gtimer(ld_gtimer_t *gtimer) {
-    pthread_cancel(gtimer->th);
-    close(gtimer->handler->epoll_fd);
-
-    free(gtimer->handler);
-    gtimer->handler = NULL;
-}
-
+// void unregister_gtimer(ld_gtimer_t *gtimer) {
+//     pthread_cancel(gtimer->th);
+//     close(gtimer->handler->epoll_fd);
+//
+//     free(gtimer->handler);
+//     gtimer->handler = NULL;
+// }
+//
 l_err register_gtimer(ld_gtimer_t *gtimer) {
     if (gtimer->spec.it_value.tv_nsec == 0) {
         gtimer->spec.it_value.tv_nsec =1;
     }
-    ld_gtimer_handler_t *handler = gtimer->handler;
-    init_gtimer_handler(&gtimer->spec, &gtimer->handler);
+    ld_gtimer_handler_t *handler = &gtimer->handler;
 
-    pthread_create(&gtimer->th, NULL, start_gtimer, gtimer);
-    pthread_detach(gtimer->th);
+    pthread_create(&handler->th, NULL, start_gtimer, gtimer);
+    pthread_detach(handler->th);
 
     return LD_OK;
 }

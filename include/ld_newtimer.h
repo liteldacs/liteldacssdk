@@ -62,8 +62,7 @@ typedef struct stimer_ev_s {
 
 typedef struct ld_gtimer_t {
     struct itimerspec spec;
-    pthread_t th;
-    ld_gtimer_handler_t *handler;
+    ld_gtimer_handler_t handler;
 }ld_gtimer_t;
 
 
