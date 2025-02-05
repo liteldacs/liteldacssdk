@@ -50,6 +50,7 @@ typedef struct config_s {
     ldacs_roles role;
     double init_fl_freq;
     double init_rl_freq;
+    bool is_merged;
 
     /* net */
     uint8_t ip_ver;

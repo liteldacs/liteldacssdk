@@ -299,8 +299,8 @@ const void *hashmap_set(struct hashmap *map, const void *item) {
 // hashmap_get_with_hash works like hashmap_get but you provide your
 // own hash. The 'hash' callback provided to the hashmap_new function
 // will not be called
-const void *hashmap_get_with_hash(struct hashmap *map, const void *key,
-                                  uint64_t hash)
+void *hashmap_get_with_hash(struct hashmap *map, const void *key,
+                            uint64_t hash)
 {
     hash = clip_hash(hash);
     size_t i = hash & map->mask;
@@ -319,7 +319,7 @@ const void *hashmap_get_with_hash(struct hashmap *map, const void *key,
 
 // hashmap_get returns the item based on the provided key. If the item is not
 // found then NULL is returned.
-const void *hashmap_get(struct hashmap *map, const void *key) {
+void *hashmap_get(struct hashmap *map, const void *key) {
     return hashmap_get_with_hash(map, key, get_hash(map, key));
 }
 

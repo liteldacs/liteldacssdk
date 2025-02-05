@@ -12,6 +12,7 @@ typedef enum { TRUE = 1, FALSE = 0 } bool;
 typedef bool is_stop;
 extern is_stop volatile stop_flag;
 
+typedef void *(*malloc_func)(size_t);
 typedef void (*free_func)(void *);
 
 typedef enum { FL, RL } ld_orient;
