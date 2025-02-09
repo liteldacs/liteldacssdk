@@ -69,7 +69,7 @@ static const char *time_format[][2] = {
     "%Y_%m_%d_%H_%M_%S",
     },{
     "%Y-%m-%d",
-    "%Y-%m-%d %H-%M-%S",
+    "%Y-%m-%d %H:%M:%S",
     },
 };
 
