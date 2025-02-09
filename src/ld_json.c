@@ -4,6 +4,8 @@
 
 #include "ld_json.h"
 
+#include <ldacs/utils/ld_log.h>
+
 uint64_t double_u64_converter(double val) {
     //uint64_t converted_value = 0;
     //memcpy(&converted_value, &val, sizeof(uint64_t));
@@ -205,8 +207,9 @@ void get_json_str(void *ptr, json_tmpl_desc_t *desc, char **j_str) {
     cJSON_Delete(data_json);
 }
 
-void get_json_buffer(int type, cJSON *node, buffer_t *buf) {
+buffer_t * get_json_buffer(int type, cJSON *node) {
     char *out_str = NULL;
+    buffer_t *buf = init_buffer_unptr();
     switch (type) {
         case JSON_UNFORMAT:
             out_str = cJSON_PrintUnformatted(node);
@@ -215,9 +218,10 @@ void get_json_buffer(int type, cJSON *node, buffer_t *buf) {
             out_str = cJSON_Print(node);
             break;
         default:
-            return;
+            return NULL;
     }
 
     CLONE_TO_CHUNK(*buf, out_str, strlen(out_str));
     cJSON_free(out_str);
+    return buf;
 }

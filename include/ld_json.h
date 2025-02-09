@@ -33,7 +33,7 @@ cJSON *marshel_json(const void *struct_ptr, json_tmpl_desc_t *tmpl_desc);
 
 void unmarshel_json(const cJSON *root, void *struct_ptr, json_tmpl_desc_t *tmpl_desc);
 
-void get_json_buffer(int type, cJSON *node, buffer_t *buf);
+buffer_t * get_json_buffer(int type, cJSON *node);
 
 void get_json_str(void *ptr, json_tmpl_desc_t *desc, char **j_str);
 
