@@ -118,7 +118,9 @@ l_err drr_resource_alloc(ld_drr_t *drr, size_t pkt_size, size_t W, size_t W_min,
         else if (frag_data == TRUE) ld_rbuffer_push_front(drr->active_list, req_i);
         else ld_rbuffer_push_back(drr->active_list, req_i);
     }
+    if (callback_func) {
     callback_func(drr, alloc_map, cb_args);
+    }
     free(alloc_map);
     return LD_OK;
 }

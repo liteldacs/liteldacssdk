@@ -39,13 +39,14 @@ void cb3(ld_drr_t *drr, size_t *alloc_map, void *args) {
 
 int main() {
     ld_drr_t *drr = init_ld_drr(4096);
-
-    ld_req_update(drr, 1, 100);
-    ld_req_update(drr, 2, 200);
+    ld_req_update(drr, 0, 100);
+    ld_req_update(drr, 1, 200);
+    ld_req_update(drr, 2, 900);
     ld_req_update(drr, 3, 900);
-    ld_req_update(drr, 4, 900);
 
     drr_resource_alloc(drr, 200, 1000, 0, cb1, NULL);
+    drr_resource_alloc(drr, 200, 1000, 0, NULL, NULL);
+    log_warn("=================== %d", ld_rbuffer_count(drr->active_list));
 
 
     drr_resource_alloc(drr, 200, 1000, 0, cb2, NULL);
@@ -55,7 +56,7 @@ int main() {
     ld_req_update(drr, 0, 200);
     drr_resource_alloc(drr, 200, 1000, 0, cb3, NULL);
 
-    // free_ld_drr(drr);
+    free_ld_drr(drr);
 
     return 0;
 }
