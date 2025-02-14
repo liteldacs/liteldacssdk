@@ -16,6 +16,7 @@ uint8_t window_end(window_t *w){
 
 window_t *init_window(size_t seq_size){
     window_t *w = malloc(sizeof(window_t));
+    // if (!)
     w->items = calloc(seq_size, sizeof(window_item_t));
     w->seq_sz = w->avail_size = seq_size;
     w->win_size = seq_size >> 1;
@@ -62,44 +63,11 @@ l_err window_put(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq){
     return LD_OK;
 }
 
-static void window_slide(window_t *w) {
-    while ((w->to_ack_start < w->to_send_start) ||
-        (w->to_send_start < w->to_ack_start && (w->to_ack_start > (w->to_send_start + w->win_size) || w->to_ack_start < w->to_send_start))) {
-        window_item_t *p_item = &w->items[w->to_ack_start];
-        // log_warn("******************** %d", w->to_ack_start);
-        if (p_item->is_ack == TRUE) {
-            free_buffer(p_item->buf);
-            memset(p_item, 0, sizeof(window_item_t));
-            w->to_ack_start =  (w->to_ack_start + 1) % w->seq_sz;
-        }else {
-            break;
-        }
-    }
-}
-
-l_err window_ack_item(window_t *w, uint8_t PID) {
-    if ((PID >= w->to_ack_start && PID < w->to_send_start) ||
-        (w->to_send_start < w->to_ack_start && (PID >= w->to_ack_start || PID < w->to_send_start))) {
-        window_item_t *p_item = &w->items[PID];
-        p_item->is_ack = TRUE;
-
-        window_slide(w);
-        // log_warn("$$$$$$ %d %d", w->to_ack_start, w->to_send_start);
-        return LD_OK;
-        }
-    return LD_ERR_INVALID;
-}
-
 l_err window_put_ctx(window_t *w, window_ctx_t *ctx) {
     uint8_t win_end = (w->to_recv_start + w->win_size) % w->seq_sz;
 
-    if (!(ctx->pid >= w->to_recv_start && ctx->pid < win_end) || (win_end  < w->to_recv_start && (ctx->pid < win_end || ctx->pid >= w->to_recv_start) )) {
-        if (!(ctx->pid >= w->to_recv_start && ctx->pid < win_end)) {
-            log_warn("=======");
-                log_warn("---------- %d %d", ctx->pid, w->to_recv_start);
-        }else{
-            log_warn("+++++++ ");
-        }
+    if (!((ctx->pid >= w->to_recv_start && ctx->pid < win_end) || (win_end  < w->to_recv_start && (ctx->pid < win_end || ctx->pid >= w->to_recv_start)))) {
+        log_error("Can not input context into windows");
         return LD_ERR_INVALID;
     }
 
@@ -126,11 +94,38 @@ l_err window_put_ctx(window_t *w, window_ctx_t *ctx) {
     p_item->is_processed = FALSE;
 
     w->avail_size--;
-    /* TODO: 读取位置更新，window是否考虑拆成owindow和iwindow */
-
 
     return LD_OK;
 }
+
+
+
+buffer_t *window_in_get(window_t *w) {
+    buffer_t *buf = NULL;
+    for (int i = 0; i < w->win_size; i++) {
+        window_item_t *p_item = &w->items[(w->to_recv_start + i) % w->seq_sz];
+        if (p_item->all_recv == TRUE && p_item->is_processed == FALSE) {
+            buf = calloc(1, sizeof(buffer_t));
+            CLONE_BY_BUFFER(*buf, *p_item->buf);
+
+            w->avail_size++;
+            p_item->is_processed = TRUE;
+            break;
+        }
+    }
+
+    /* slide window */
+    uint8_t to_recv = w->to_recv_start;
+    while (w->items[to_recv].is_processed == TRUE) {
+        clear_window_item(&w->items[to_recv]);
+        log_warn("IN GET %d %d", to_recv, w->seq_sz);
+        to_recv = (to_recv + 1 ) % w->seq_sz;
+        w->to_recv_start = to_recv;
+    }
+
+    return buf;
+}
+
 
 static window_item_t *window_out_get(window_t *w) {
     if (w->avail_size == w->seq_sz)    return NULL;
@@ -151,30 +146,6 @@ static window_item_t *window_out_get(window_t *w) {
     return wi;
 }
 
-buffer_t *window_in_get(window_t *w) {
-    buffer_t *buf = NULL;
-    for (int i = 0; i < w->win_size; i++) {
-        window_item_t *p_item = &w->items[(w->to_recv_start + i) % w->seq_sz];
-        if (p_item->all_recv == TRUE && p_item->is_processed == FALSE) {
-            buf = calloc(1, sizeof(buffer_t));
-            CLONE_BY_BUFFER(*buf, *p_item->buf);
-
-            w->avail_size++;
-            p_item->is_processed = TRUE;
-            break;
-        }
-    }
-
-    /* slide window */
-    uint8_t to_recv = w->to_recv_start;
-    while (w->items[to_recv].is_processed == TRUE) {
-        clear_window_item(&w->items[to_recv]);
-        to_recv = (to_recv + 1 ) % w->seq_sz;
-        w->to_recv_start = to_recv;
-    }
-
-    return buf;
-}
 
 static window_item_t *window_out_get_frag(window_t *w, size_t sz) {
     if (w->avail_size == w->seq_sz)    return NULL;
@@ -230,6 +201,35 @@ window_ctx_t *window_check_get(window_t *w, int64_t *avail_buf_sz) {
     free_window_item(item);
 
     return pop_out;
+}
+
+
+static void window_slide(window_t *w) {
+    // while ((w->to_ack_start < w->to_send_start) ||
+    //     (w->to_send_start < w->to_ack_start && (w->to_ack_start > (w->to_send_start + w->win_size) || w->to_ack_start < w->to_send_start))) {
+    while ((w->to_ack_start < w->to_send_start) ||
+        (w->to_send_start < w->to_ack_start && (w->to_ack_start > (w->to_send_start + w->win_size) ))) {
+        window_item_t *p_item = &w->items[w->to_ack_start];
+        if (p_item->is_ack == TRUE) {
+            free_buffer(p_item->buf);
+            memset(p_item, 0, sizeof(window_item_t));
+            w->to_ack_start =  (w->to_ack_start + 1) % w->seq_sz;
+        }else {
+            break;
+        }
+    }
+}
+
+l_err window_ack_item(window_t *w, uint8_t PID) {
+    if ((PID >= w->to_ack_start && PID < w->to_send_start) ||
+        (w->to_send_start < w->to_ack_start && (PID >= w->to_ack_start || PID < w->to_send_start))) {
+        window_item_t *p_item = &w->items[PID];
+        p_item->is_ack = TRUE;
+
+        window_slide(w);
+        return LD_OK;
+        }
+    return LD_ERR_INVALID;
 }
 
 static l_err free_window_item(window_item_t *wi) {
