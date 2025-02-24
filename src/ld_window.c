@@ -66,7 +66,7 @@ l_err window_put(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq){
 l_err window_put_ctx(window_t *w, window_ctx_t *ctx) {
     uint8_t win_end = (w->to_recv_start + w->win_size) % w->seq_sz;
 
-    if (!((ctx->pid >= w->to_recv_start && ctx->pid < win_end) || (win_end  < w->to_recv_start && (ctx->pid < win_end || ctx->pid >= w->to_recv_start)))) {
+    if (!(ctx->pid >= w->to_recv_start && ctx->pid < win_end) && !(win_end  < w->to_recv_start && (ctx->pid < win_end || ctx->pid >= w->to_recv_start))) {
         log_error("Can not input context into windows");
         return LD_ERR_INVALID;
     }
@@ -205,8 +205,6 @@ window_ctx_t *window_check_get(window_t *w, int64_t *avail_buf_sz) {
 
 
 static void window_slide(window_t *w) {
-    // while ((w->to_ack_start < w->to_send_start) ||
-    //     (w->to_send_start < w->to_ack_start && (w->to_ack_start > (w->to_send_start + w->win_size) || w->to_ack_start < w->to_send_start))) {
     while ((w->to_ack_start < w->to_send_start) ||
         (w->to_send_start < w->to_ack_start && (w->to_ack_start > (w->to_send_start + w->win_size) ))) {
         window_item_t *p_item = &w->items[w->to_ack_start];
@@ -228,8 +226,16 @@ l_err window_ack_item(window_t *w, uint8_t PID) {
 
         window_slide(w);
         return LD_OK;
-        }
+    }
     return LD_ERR_INVALID;
+}
+
+
+l_err window_set_send_start(window_t *w, uint8_t pos) {
+    if (!w) return LD_ERR_NULL;
+    w->to_send_start = w->avail_start = pos;
+    w->to_ack_start = pos;
+    return LD_OK;
 }
 
 static l_err free_window_item(window_item_t *wi) {

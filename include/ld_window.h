@@ -61,6 +61,8 @@ uint8_t window_end(window_t *w);
 
 l_err window_ack_item(window_t *w, uint8_t PID);
 
+l_err window_set_send_start(window_t *w, uint8_t pos);
+
 l_err free_window_ctx(window_ctx_t *ctx);
 
 #endif //LD_WINDOW_H

@@ -4,6 +4,8 @@
 
 #include "ld_statemachine.h"
 
+#include <ld_log.h>
+
 static void goToErrorState(struct sm_statemachine_s *stateMachine,
                            struct sm_event_s *const event);
 
@@ -73,7 +75,9 @@ l_err stateM_handleEvent(struct sm_statemachine_s *fsm,
          * not return to itself): */
         if (nextState != fsm->currentState && nextState->entryAction) {
             /*TODO: 未来entryAction需要返回l_err， 一旦L_err不等于0，即goToErrorState() */
-            if (nextState->entryAction(nextState->data, event)) break;
+            if (nextState->entryAction(nextState->data, event)) {
+                break;
+            }
         }
 
         fsm->previousState = fsm->currentState;

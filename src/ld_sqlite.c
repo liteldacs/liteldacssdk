@@ -67,8 +67,10 @@ static int find_table_cb(void *data, int argc, char **argv, char **column_names)
 
             /* 第二列为列名 */
             char *col_name = result[((i + 1) * ncol) + 1];
+
             /* +1 for '\0' */
-            c_data->columns[i] = calloc(strlen(col_name + 1), sizeof(void *));
+            // c_data->columns[i] = calloc(strlen(col_name + 1), sizeof(void *));
+            c_data->columns[i] = calloc(1, (strlen(col_name) + 1) * sizeof(char));
             strncpy(c_data->columns[i], col_name, strlen(col_name));
         }
 

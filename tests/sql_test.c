@@ -33,7 +33,7 @@ static table_tmpl_desc_t test_sql_tmpl_desc = {
 
 
 int main() {
-    const char *db_path = "/home/jiaxv/C/test/ldacs_sim_re/resources/ld_sql.db";
+    const char *db_path = "ld_sql.db";
     sqlite_entity_t *sql_obj = init_sqlite_entity(db_path);
     struct test_sql t_sql = {
         .id = 3,
@@ -49,7 +49,7 @@ int main() {
 
     update_value(sql_obj, &test_sql_tmpl_desc, (char *[]){"I", "NAME"}, 2,
                  &(struct test_sql){.i = 65536, .name = "ABCD"}, (char *[]){"ID", "NAME"}, 2,
-                 &(struct test_sql){.id = 46, .name = "YiQin"},
+                 &(struct test_sql){.id = 1, .name = "YiQin"},
                  (sql_comp []){SQL_EQ, SQL_NEQ},
                  (sql_logic []){SQL_OR});
 
@@ -57,7 +57,7 @@ int main() {
     size_t sz = 0;
     select_value(sql_obj, &test_sql_tmpl_desc, (char *[]){"ID", "CreatedAt", "D2", "I", "NAME", "NAME2"}, 6,
                  (char *[]){"NAME", "NAME2"}, 2,
-                 &(struct test_sql){.name = "ABCD", .name2 = "YiQin2"},
+                 &(struct test_sql){.name = "YiQin", .name2 = "YiQin2"},
                  (sql_comp []){SQL_EQ, SQL_EQ},
                  (sql_logic []){SQL_AND},
                  (void *) sqls, &sz);

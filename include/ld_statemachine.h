@@ -102,7 +102,8 @@ typedef struct fsm_event_s {
     char *state_str;
     /* the event will be activated at entryState().
      * It ***CAN NOT*** contain any procdure about state-changing. */
-    l_err (*event)(void *);
+    l_err (*entry_event)(void *);
+    l_err (*exit_event)(void *);
 } fsm_event_t;
 
 typedef struct fsm_event_data_s {
@@ -354,7 +355,7 @@ typedef struct sm_state_s {
      * \param stateData the state's #data will be passed.
      * \param event the event that triggered a transition will be passed.
      */
-    void (*exitAction)(void *stateData, struct sm_event_s *event);
+    l_err (*exitAction)(void *stateData, struct sm_event_s *event);
 } sm_state_t;
 
 /**
@@ -473,14 +474,20 @@ static bool default_guard(void *condition, struct sm_event_s *event) {
 static l_err sm_default_entry_action(void *stateData, struct sm_event_s *event) {
     fsm_event_data_t *ev_data = event->data;
     fsm_event_t *evi = ev_data->fev;
-    if (evi->event != NULL) {
-        return evi->event(ev_data->args);
+    if (evi->entry_event != NULL) {
+        return evi->entry_event(ev_data->args);
     }
     return LD_OK;
 }
 
-static void sm_default_exit_action(void *statedata, struct sm_event_s *event) {
-    const char *statename = (const char *) statedata;
+static l_err sm_default_exit_action(void *statedata, struct sm_event_s *event) {
+    // const char *statename = (const char *) statedata;
+    fsm_event_data_t *ev_data = event->data;
+    fsm_event_t *evi = ev_data->fev;
+    if (evi->exit_event != NULL) {
+        return evi->exit_event(ev_data->args);
+    }
+    return LD_OK;
 }
 
 
