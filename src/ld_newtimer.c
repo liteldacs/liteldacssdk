@@ -72,11 +72,15 @@ static void *gtimer_event_dispatch(void *args) {
     return NULL;
 }
 
+void stimer_fatal_log_cb(int severity, const char *msg) {
+    log_error("[libevent] %s\n", msg);
+}
 static void *stimer_event_dispatch(void *arg) {
     stimer_ev_t *stimer= arg;
     ld_stimer_handler_t *handler = &stimer->handler;
     ld_lock(&handler->mutex);
     struct timeval tv;
+    event_set_log_callback(stimer_fatal_log_cb);
     evthread_use_pthreads();
     handler->base = event_base_new();
     nano_to_timeval(&tv, stimer->nano);

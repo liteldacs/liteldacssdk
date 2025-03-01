@@ -118,7 +118,7 @@ static void clone_by_alloced_buffer(buffer_t *buf, buffer_t *src) {
     for(int i = 0; i < (n); i++){                   \
         free_buffer(ptr[i]);\
     }                                               \
-    memset(buf_p, 0x00, n * sizeof(void *));\
+    memset(buf_p, 0x00, n * sizeof(buffer_t *));\
 }
 
 //free掉malloc过的数组
