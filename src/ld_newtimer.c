@@ -158,7 +158,8 @@ l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_ev_t *timer_cb) {
 
     gtimer_node_t *node = &gtimer->handler.nodes;
     timer_cb->has_times = 0;
-    node->cbs[node->cb_count] = *timer_cb;
+    memcpy(&node->cbs[node->cb_count], timer_cb, sizeof(gtimer_ev_t));
+    // node->cbs[node->cb_count] = *timer_cb;
     node->cb_count++;
     return LD_OK;
 }
