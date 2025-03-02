@@ -68,7 +68,7 @@ typedef struct ld_gtimer_t {
 
 l_err register_gtimer(ld_gtimer_t *gtimer);
 
-void unregister_gtimer(ld_gtimer_t *gtimer);
+l_err unregister_gtimer(ld_gtimer_t *gtimer);
 
 l_err register_gtimer_event(ld_gtimer_t *gtimer, gtimer_ev_t *timer_cb);
 

@@ -50,8 +50,17 @@ void *mf_event2(void *args) {
 
 int main() {
     log_init(LOG_DEBUG,  "../../log", "test");
+    unregister_gtimer(&sf_global_cb);
     register_gtimer(&sf_global_cb);
     register_gtimer_event(&sf_global_cb, &sf_cb);
-    sleep(100000);
+    sleep(2);
+
+    unregister_gtimer(&sf_global_cb);
+    unregister_gtimer(&sf_global_cb);
+    log_warn("???????");
+    sleep(1);
+    register_gtimer(&sf_global_cb);
+    register_gtimer_event(&sf_global_cb, &sf_cb);
+    sleep(100);
 }
 

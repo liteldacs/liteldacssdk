@@ -198,3 +198,14 @@ l_err register_gtimer(ld_gtimer_t *gtimer) {
 
     return LD_OK;
 }
+
+l_err unregister_gtimer(ld_gtimer_t *gtimer) {
+    ld_gtimer_handler_t *handler = &gtimer->handler;
+    log_warn("%d", handler->th);
+    if (handler->th == 0)   return LD_OK;
+    pthread_cancel(handler->th);
+    close(handler->epoll_fd);
+    memset(handler, 0, sizeof(ld_gtimer_handler_t));
+    ld_unlock(&handler->mutex);
+    return LD_OK;
+}
