@@ -78,7 +78,6 @@ typedef struct config_s {
     uint8_t sec_enc_id;
     size_t kdf_len;
 
-
     /* log */
     char log_dir[1024];
 } config_t;

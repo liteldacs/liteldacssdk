@@ -34,6 +34,7 @@ set(tests
         ntp
         timerfd
         hashmap
+        ipv6addr
 )
 
 cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
