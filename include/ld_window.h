@@ -49,6 +49,8 @@ typedef struct window_s{
 
 window_t *init_window(size_t seq_size);
 
+l_err window_destory(window_t *w);
+
 l_err window_put(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq);
 
 l_err window_put_ctx(window_t *w, window_ctx_t *ctx);

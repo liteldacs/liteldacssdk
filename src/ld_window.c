@@ -43,6 +43,14 @@ window_t *init_window(size_t seq_size){
     return w;
 }
 
+// TODO： item没清理干净
+l_err window_destory(window_t *w) {
+    if (!w) return LD_ERR_NULL;
+    if (w->items) free(w->items);
+    free(w);
+    return LD_OK;
+}
+
 l_err window_put(window_t *w, uint8_t cos, buffer_t *buf, uint8_t *seq){
     // if (w->avail_size == 0) return LD_ERR_INTERNAL;
     if (w->avail_size == 0) pthread_cond_wait(w->put_cond, w->put_mutex);
@@ -81,7 +89,7 @@ l_err window_put_ctx(window_t *w, window_ctx_t *ctx) {
         CLONE_TO_CHUNK(*p_item->buf, ctx->buf->ptr, ctx->buf->len);
     }else {
         if(p_item->buf == NULL) {
-            log_error("Fragment buffer is Null");
+            log_error("Fragment buffer is Null. PID is `%d`", ctx->pid);
             return LD_ERR_NULL;
         }
         if(cat_to_buffer(p_item->buf, ctx->buf->ptr, ctx->buf->len)) {
