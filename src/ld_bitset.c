@@ -108,3 +108,44 @@ int bs_get_highest(ld_bitset_t *set) {
     }
     return highest;
 }
+
+int bs_get_lowest(ld_bitset_t *set) {
+    int lowest = -1;
+    for (int i = 0; i < set->res_num; i++) {
+        if ((set->bitset[i / 8] & (1 << (i % 8))) != 0) {
+            lowest = i;
+        }
+    }
+    return lowest;
+}
+
+static void switch_endian(const uint8_t *src, size_t src_len, uint8_t *dst) {
+    if (!src || !dst) return ;
+    for (int i = 0; i < src_len; i++) {
+        dst[i] = src[src_len - 1 - i];
+    }
+}
+
+l_err bit_rightshift(uint8_t *src, size_t src_len, uint8_t *dst, size_t to_shift) {
+    if (!src || !dst || src_len == 0) return LD_ERR_INTERNAL;
+    if (to_shift == 0) {
+        memcpy(dst, src, src_len);
+        return LD_OK;
+    }
+    uint8_t *small_endian = calloc(src_len, sizeof(uint8_t));
+    switch_endian(src, src_len, small_endian);
+
+    for (int i = 0; i < to_shift; i++) {
+        uint8_t to_add = 0;
+        for (int j = 0; j < src_len; j++) {
+            uint8_t last_bit = (small_endian[j] << 0x07) & 0x80;
+            small_endian[j] = small_endian[j] >> 1;
+            small_endian[j] += to_add;
+            to_add  = last_bit;
+        }
+    }
+
+    switch_endian(small_endian, src_len, dst);
+    free(small_endian);
+    return LD_OK;
+}
