@@ -16,7 +16,6 @@ ld_bitset_t *init_bitset(const size_t res_num, const size_t res_sz, init_resourc
     bitset->free_func = free_func;
 
     if (init_func == NULL || free_func == NULL || init_func(bitset) != LD_OK) {
-        log_warn("++++++++++++++++++++++++++");
         free(bitset->bitset);
         free(bitset);
         return NULL;

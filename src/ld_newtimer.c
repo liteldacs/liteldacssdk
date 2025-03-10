@@ -201,7 +201,7 @@ l_err register_gtimer(ld_gtimer_t *gtimer) {
 
 l_err unregister_gtimer(ld_gtimer_t *gtimer) {
     ld_gtimer_handler_t *handler = &gtimer->handler;
-    log_warn("%d", handler->th);
+    // log_warn("%d", handler->th);
     if (handler->th == 0)   return LD_OK;
     pthread_cancel(handler->th);
     close(handler->epoll_fd);

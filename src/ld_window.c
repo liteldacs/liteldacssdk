@@ -43,7 +43,6 @@ window_t *init_window(size_t seq_size){
     return w;
 }
 
-// TODO： item没清理干净
 l_err window_destory(window_t *w) {
     if (!w) return LD_ERR_NULL;
     if (w->items) free(w->items);
@@ -75,7 +74,7 @@ l_err window_put_ctx(window_t *w, window_ctx_t *ctx) {
     uint8_t win_end = (w->to_recv_start + w->win_size) % w->seq_sz;
 
     if (!(ctx->pid >= w->to_recv_start && ctx->pid < win_end) && !(win_end  < w->to_recv_start && (ctx->pid < win_end || ctx->pid >= w->to_recv_start))) {
-        log_error("Can not input context into windows");
+        log_error("Can not input context into windows %d %d %d %d", ctx->pid, w->to_recv_start, win_end, w->to_send_start);
         return LD_ERR_INVALID;
     }
 
