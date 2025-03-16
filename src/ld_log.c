@@ -3,6 +3,8 @@
 //
 
 #include "ld_log.h"
+
+#include <linux/limits.h>
 /*
  * Copyright (c) 2020 rxi
  *
@@ -224,12 +226,22 @@ void log_print_buffer(int level, const char *file, int line, const char *msg_hea
 }
 
 l_err log_init(int level, const char *log_dir, const char *role_str) {
+    if (!log_dir)   return LD_ERR_NULL;
+
     char time_str[32] = {0};
     char *log_path = NULL;
     char *log_file = NULL;
     size_t p_sz, f_sz = 0;
     FILE *path_stream = NULL;
     FILE *file_stream = NULL;
+
+    if (log_dir[0] == '~') {
+        const char *home_dir = getenv("HOME");
+        char command[PATH_MAX] = {0};
+        memcpy(command, home_dir, strlen(home_dir));
+        memcpy(command + strlen(home_dir), log_dir + 1, strlen(log_dir) -1);
+        log_dir = command;
+    }
 
     if (clock_gettime(CLOCK_MONOTONIC, &L.g_start) == -1)
         log_error("clock_gettime");
@@ -246,6 +258,7 @@ l_err log_init(int level, const char *log_dir, const char *role_str) {
     fprintf(path_stream, "%s/%s", log_dir, time_str);
     fclose(path_stream);
     if (check_path(log_path)) {
+        log_warn("Wrong Log path");
         free(log_path);
         return LD_ERR_INTERNAL;
     }
