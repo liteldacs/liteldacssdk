@@ -5,6 +5,8 @@
 #ifndef TEST_CLIENT_CONFIG_H
 #define TEST_CLIENT_CONFIG_H
 
+#include <linux/limits.h>
+
 #include "../global/ldacs_sim.h"
 #include "ld_log.h"
 
@@ -45,6 +47,7 @@ typedef struct config_s {
     bool debug;
     uint32_t timeout; /* connection_s expired time */
     uint32_t worker; /* worker num */
+    char config_path[PATH_MAX];
 
     /* basic */
     ldacs_roles role;
@@ -79,7 +82,7 @@ typedef struct config_s {
     size_t kdf_len;
 
     /* log */
-    char log_dir[1024];
+    char log_dir[PATH_MAX];
 } config_t;
 
 extern config_t config;
