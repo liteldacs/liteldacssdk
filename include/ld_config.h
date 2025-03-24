@@ -19,14 +19,16 @@
 #define UA_GSC_LEN (4)
 
 typedef enum {
-    LD_AS = 0x0,
-    LD_GS = 0x1,
-    LD_GSC = 0x2,
-    LD_SGW = 0x3,
-    LD_ATTACK = 0x4,
+    LD_UNDEFINED =  0x0,
+    LD_AS = 0x1,
+    LD_GS = 0x2,
+    LD_GSC = 0x3,
+    LD_SGW = 0x4,
+    LD_ATTACK = 0x5,
 } ldacs_roles;
 
 static const char *roles_str[] = {
+    "LD_UNDEFINED",
     "LD_AS",
     "LD_GS",
     "LD_GSC",
