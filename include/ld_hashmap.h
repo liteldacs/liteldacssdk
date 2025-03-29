@@ -1,7 +1,3 @@
-//
-// Created by jiaxv on 23-10-3.
-//
-
 #ifndef LDACS_SIM_UTIL_HASHMAP_H
 #define LDACS_SIM_UTIL_HASHMAP_H
 // Copyright 2020 Joshua J Baker. All rights reserved.

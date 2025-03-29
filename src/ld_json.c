@@ -4,7 +4,7 @@
 
 #include "ld_json.h"
 
-#include <ldacs/utils/ld_log.h>
+#include "ld_log.h"
 
 uint64_t double_u64_converter(double val) {
     //uint64_t converted_value = 0;

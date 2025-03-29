@@ -35,6 +35,7 @@ set(tests
         timerfd
         hashmap
         ipv6addr
+        coredump
 )
 
 cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)

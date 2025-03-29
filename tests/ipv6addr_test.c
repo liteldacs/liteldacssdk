@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <arpa/inet.h>  // for inet_pton
-#include <utils/ld_log.h>
+#include "ld_log.h"
 
 int main() {
     const char *ipv6_str = "fe01::1";

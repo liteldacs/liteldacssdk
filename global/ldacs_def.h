@@ -7,7 +7,10 @@
 
 #define SYSTEM_BITS 64
 
-typedef enum { TRUE = 1, FALSE = 0 } bool;
+// back to <stdbool.h>
+// typedef enum { TRUE = 1, FALSE = 0 } bool;
+#define TRUE true
+#define FALSE false
 
 typedef bool is_stop;
 extern is_stop volatile stop_flag;

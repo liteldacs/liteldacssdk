@@ -8,11 +8,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <bits/types/struct_itimerspec.h>
-#include <ldacs/global/ldacs_def.h>
 #include <sys/epoll.h>
 
-#include <ldacs/global/ldacs_def.h>
-#include <ldacs/utils/ld_log.h>
 #include <sys/timerfd.h>
 
 #include "ld_multitimer.h"

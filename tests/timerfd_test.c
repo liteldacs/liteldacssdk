@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>        /* Definition of uint64_t */
-#include <utils/ld_log.h>
 
 void *mf_event(void *args);
 void *sf_event(void *args);

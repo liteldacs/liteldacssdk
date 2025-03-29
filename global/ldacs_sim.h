@@ -50,6 +50,7 @@
 #include <semaphore.h>
 #include <event2/thread.h>
 #include <sqlite3.h>
+#include <stdbool.h>
 #include "ldacs_def.h"
 
 #endif //TEST_CLIENT_TEST_CLIENT_H
