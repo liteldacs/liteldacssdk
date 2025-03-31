@@ -138,12 +138,12 @@ void init_pbs(pb_stream *pbs, uint8_t *start, size_t len, const char *name);
 bool in_struct(void *struct_ptr, struct_desc_t *sd, pb_stream *ins, pb_stream *obj_pbs);
 
 
-bool pb_in_mac(pb_stream *ins, size_t mac_len, KEY_HANDLE key_med);
+bool pb_in_mac(pb_stream *ins, size_t mac_len, KEY_HANDLE key_med, verify_hmac_func verify_hmac);
 
 bool out_struct(const void *struct_ptr, struct_desc_t *sd, pb_stream *outs, pb_stream *obj_pbs);
 
 
-void pb_out_mac(pb_stream *outs, size_t mac_len, KEY_HANDLE key_med);
+void pb_out_mac(pb_stream *outs, size_t mac_len, KEY_HANDLE key_med, calc_hmac_func calc_hmac);
 
 void close_output_pbs(pb_stream *pbs);
 

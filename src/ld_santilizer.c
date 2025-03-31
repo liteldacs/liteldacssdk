@@ -321,12 +321,12 @@ bool in_struct(void *struct_ptr, struct_desc_t *sd, pb_stream *ins, pb_stream *o
  * @param key 密钥
  * @return 验证结果
  */
-bool pb_in_mac(pb_stream *ins, size_t mac_len, KEY_HANDLE key_med) {
+bool pb_in_mac(pb_stream *ins, size_t mac_len, KEY_HANDLE key_med, verify_hmac_func verify_hmac) {
     uint8_t *initial = ins->start;
     size_t len = ins->cur - initial;
 
     /* 验证结果 */
-    if (!verify_hmac_uint(key_med, ins->cur, initial, len, mac_len)) {
+    if (!verify_hmac(key_med, ins->cur, initial, len, mac_len)) {
         log_buf(LOG_DEBUG, "to_veri", ins->cur, 32);
         log_error("MAC verify failed!");
         return FALSE;
@@ -519,11 +519,11 @@ bool out_struct(const void *struct_ptr, struct_desc_t *sd, pb_stream *outs, pb_s
  * @param mac_len MAC长度
  * @param key 密钥
  */
-void pb_out_mac(pb_stream *outs, size_t mac_len, KEY_HANDLE key_med) {
+void pb_out_mac(pb_stream *outs, size_t mac_len, KEY_HANDLE key_med, calc_hmac_func calc_hmac) {
     uint8_t *initial = outs->start;
     size_t len = outs->cur - initial;
 
-    calc_hmac_uint(initial, len, key_med, outs->cur, mac_len);
+    calc_hmac(initial, len, key_med, outs->cur, mac_len);
 
     /** should cut mac into a certain length, depending on mac_len */
     outs->cur += mac_len;

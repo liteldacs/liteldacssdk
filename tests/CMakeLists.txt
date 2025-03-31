@@ -45,6 +45,12 @@ IF (${PRETTY_NAME} MATCHES "Ubuntu")
 ENDIF ()
 INCLUDE_DIRECTORIES(/usr/local/include/ldacs)
 
+find_package(Ldacscrypto REQUIRED)
+if (Ldacscrypto_FOUND)
+    include_directories(${Ldacscrypto_INCLUDE_DIRS})
+    link_libraries(ldacscrypto::ldacscrypto)
+endif ()
+
 enable_testing()
 foreach (name ${tests})
     add_test(NAME ${name} COMMAND ${name}test)
