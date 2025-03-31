@@ -26,6 +26,12 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC pthread yaml base64 cjson)
 
+find_package(Ldacscrypto REQUIRED)
+if (Ldacscrypto_FOUND)
+    include_directories(${Ldacscrypto_INCLUDE_DIRS})
+    link_libraries(ldacscrypto::ldacscrypto)
+endif ()
+
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES output_name "ldacsutils")
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 INSTALL(TARGETS ${PROJECT_NAME} EXPORT LdacsutilsTargets ARCHIVE DESTINATION lib LIBRARY DESTINATION lib )
