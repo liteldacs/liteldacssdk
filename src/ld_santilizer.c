@@ -606,3 +606,33 @@ size_t sizeof_struct(field_desc *fd) {
     }
     return ret % 8 == 0 ? ret / 8 : (ret / 8) + 1;
 }
+
+buffer_t *gen_pdu(void *objs, struct_desc_t *desc, const char *name) {
+    uint8_t out_stream[512] = {0};
+    pb_stream pbs;
+    init_pbs(&pbs, out_stream, sizeof(out_stream), name);
+    out_struct(objs, desc, &pbs, NULL);
+    close_output_pbs(&pbs);
+
+    buffer_t *buf = init_buffer_unptr();
+    CLONE_TO_CHUNK(*buf, pbs.start, pbs_offset(&pbs))
+    return buf;
+}
+
+
+void *parse_sdu(buffer_t *buf, struct_desc_t *desc, size_t size) {
+    pb_stream pbs;
+    init_pbs(&pbs, buf->ptr, buf->len, "parse sdu");
+
+    void *data_upload = malloc(size);
+    if (data_upload == NULL) return NULL;
+    if (in_struct(data_upload, desc, &pbs, NULL) == FALSE) {
+        free(data_upload);
+        return NULL;
+    }
+
+    // char *dd = data_upload;
+    // log_info("%s", desc->name);
+    // log_buf(LOG_WARN, "AAA", dd, size);
+    return data_upload;
+}

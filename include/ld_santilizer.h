@@ -172,5 +172,10 @@ const char *enum_name(const enum_names *ed, unsigned long val);
 
 const char *enum_show(enum_names *ed, unsigned long val);
 
+buffer_t *gen_pdu(void *objs, struct_desc_t *desc, const char *name);
+
+void *parse_sdu(buffer_t *buf, struct_desc_t *desc, size_t size);
+
+
 
 #endif //LD_SANTILIZER_H
