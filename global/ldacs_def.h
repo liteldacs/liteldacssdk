@@ -124,6 +124,40 @@ typedef enum {
 #define LELEM(opt) (1ULL << (opt)) //ULL -> unsigned long long
 #define BITS_PER_BYTE 8
 
+#define UA_LEN 50
+#define MAX_PATH_LEN 4096
+#define KEY_SIZE (4)
+
+#define UA_AS_LEN (8)
+#define UA_GS_LEN (4)
+#define UA_GSC_LEN (4)
+
+typedef enum {
+    LD_UNDEFINED =  0x0,
+    LD_AS = 0x1,
+    LD_GS = 0x2,
+    LD_GSC = 0x3,
+    LD_SGW = 0x4,
+    LD_ATTACK = 0x5,
+} ldacs_roles;
+
+static const char *roles_str[] = {
+    "LD_UNDEFINED",
+    "LD_AS",
+    "LD_GS",
+    "LD_GSC",
+    "LD_SGW",
+    "LD_ATTACK",
+};
+
+typedef enum {
+    LD_UDP_CLIENT,
+    LD_UDP_SERVER,
+    LD_TCP_CLIENT,
+    LD_TCP_SERVER,
+} sock_roles;
+
+
 #define KEY_HANDLE void *
 
 typedef const char *err_t; /* error message, or NULL for success */
