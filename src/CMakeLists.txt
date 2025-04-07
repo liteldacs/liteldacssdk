@@ -5,9 +5,11 @@ set(CMAKE_C_STANDARD 11)
 
 add_compile_definitions(LOG_USE_COLOR)
 
+message(${CMAKE_INSTALL_PREFIX})
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "/usr/local/ldacs-cauc" CACHE PATH "Default install path" FORCE)
 endif()
+message(${CMAKE_INSTALL_PREFIX})
 
 AUX_SOURCE_DIRECTORY(. SRC_LIST) #把当前目录(.)下所有源代码文件和头文件加入变量SRC_LIST
 add_library(${PROJECT_NAME} STATIC ${SRC_LIST})
@@ -68,8 +70,6 @@ install(
         ${CMAKE_SOURCE_DIR}/cmake/LdacsutilsConfigVersion.cmake
         DESTINATION /usr/local/lib/cmake/ldacsutils
 )
-
-message("${CMAKE_INSTALL_PREFIX}")
 
 set(SO_PATH /usr/local/ldacs-cauc/lib)
 set(SO_CONFIG_DIR /etc/ld.so.conf.d)
