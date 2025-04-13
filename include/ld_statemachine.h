@@ -1,7 +1,3 @@
-//
-// Created by 邹嘉旭 on 2024/4/3.
-//
-
 /*
  * Copyright (c) 2013 Andreas Misje
  *

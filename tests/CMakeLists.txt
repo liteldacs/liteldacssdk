@@ -55,7 +55,7 @@ enable_testing()
 foreach (name ${tests})
     add_test(NAME ${name} COMMAND ${name}test)
     add_executable(${name}test ${name}_test.c)
-    target_link_libraries(${name}test LINK_PUBLIC ldacsutils yaml cjson base64 statemachine event event_pthreads)
+    target_link_libraries(${name}test LINK_PUBLIC liteldacssdk yaml cjson base64 statemachine event event_pthreads)
     target_include_directories(${name}test PUBLIC  ${CMAKE_SOURCE_DIR}/include)
 
     find_package(SQLite3 REQUIRED)

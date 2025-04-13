@@ -1,6 +1,3 @@
-//
-// Created by 邹嘉旭 on 2024/1/15.
-//
 
 #ifndef LDACS_SIM_LD_PQUEUE_H
 #define LDACS_SIM_LD_PQUEUE_H

@@ -1,6 +1,3 @@
-//
-// Created by 邹嘉旭 on 2024/4/3.
-//
 
 #include "ld_statemachine.h"
 

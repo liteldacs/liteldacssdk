@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(ldacsutils  VERSION 1.0.0 LANGUAGES C)
+project(liteldacssdk  VERSION 1.0.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 
@@ -17,7 +17,7 @@ add_library(${PROJECT_NAME} STATIC ${SRC_LIST})
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/utils>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/sdk>
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -34,16 +34,16 @@ if (Ldacscrypto_FOUND)
     link_libraries(ldacscrypto::ldacscrypto)
 endif ()
 
-SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES output_name "ldacsutils")
+SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES output_name "liteldacssdk")
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-INSTALL(TARGETS ${PROJECT_NAME} EXPORT LdacsutilsTargets ARCHIVE DESTINATION lib LIBRARY DESTINATION lib )
-INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include/utils)
+INSTALL(TARGETS ${PROJECT_NAME} EXPORT LiteLdacsSdkTargets ARCHIVE DESTINATION lib LIBRARY DESTINATION lib )
+INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include/sdk)
 INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/global/ DESTINATION include/global)
 
-INSTALL(EXPORT LdacsutilsTargets
-        FILE LdacsutilsTargets.cmake
-        NAMESPACE ldacsutils::
-        DESTINATION /usr/local/lib/cmake/ldacsutils
+INSTALL(EXPORT LiteLdacsSdkTargets
+        FILE LiteLdacsSdkTargets.cmake
+        NAMESPACE liteldacssdk::
+        DESTINATION /usr/local/lib/cmake/liteldacssdk
 )
 
 # 生成并安装 Config 文件
@@ -51,24 +51,23 @@ include(CMakePackageConfigHelpers)
 
 # 生成 aaaConfigVersion.cmake
 write_basic_package_version_file(
-        ${CMAKE_SOURCE_DIR}/cmake/LdacsutilsConfigVersion.cmake
-        VERSION ${Ldacsutils_VERSION}
+        ${CMAKE_SOURCE_DIR}/cmake/LiteLdacsSdkConfigVersion.cmake
+        VERSION ${LiteLdacsSdk_VERSION}
         COMPATIBILITY SameMajorVersion
 )
 
-# 生成 aaaConfig.cmake
 configure_package_config_file(
-        ${CMAKE_SOURCE_DIR}/cmake/LdacsutilsConfig.cmake.in
-        ${CMAKE_SOURCE_DIR}/cmake/LdacsutilsConfig.cmake
-        INSTALL_DESTINATION /usr/local/lib/cmake/ldacsutils
+        ${CMAKE_SOURCE_DIR}/cmake/LiteLdacsSdkConfig.cmake.in
+        ${CMAKE_SOURCE_DIR}/cmake/LiteLdacsSdkConfig.cmake
+        INSTALL_DESTINATION /usr/local/lib/cmake/liteldacssdk
 )
 
 # 安装 Config 和 Targets 文件
 install(
         FILES
-        ${CMAKE_SOURCE_DIR}/cmake/LdacsutilsConfig.cmake
-        ${CMAKE_SOURCE_DIR}/cmake/LdacsutilsConfigVersion.cmake
-        DESTINATION /usr/local/lib/cmake/ldacsutils
+        ${CMAKE_SOURCE_DIR}/cmake/LiteLdacsSdkConfig.cmake
+        ${CMAKE_SOURCE_DIR}/cmake/LiteLdacsSdkConfigVersion.cmake
+        DESTINATION /usr/local/lib/cmake/liteldacssdk
 )
 
 set(SO_PATH /usr/local/ldacs-cauc/lib)

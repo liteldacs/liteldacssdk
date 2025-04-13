@@ -1,7 +1,3 @@
-//
-// Created by 邹嘉旭 on 2024/1/15.
-//
-
 #include "ld_pqueue.h"
 
 
