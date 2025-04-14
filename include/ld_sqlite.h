@@ -5,7 +5,7 @@
 #ifndef LD_SQLITE_H
 #define LD_SQLITE_H
 
-#include "../global/ldacs_sim.h"
+#include <sqlite3.h>
 #include "ld_log.h"
 
 typedef struct table_tmpl_s table_tmpl_t;

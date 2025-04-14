@@ -4,7 +4,7 @@
 
 #ifndef LD_GLOBALTIMER_H
 #define LD_GLOBALTIMER_H
-#include "../global/ldacs_sim.h"
+#include <semaphore.h>
 #include "ld_bitset.h"
 #include "ld_thread.h"
 #include "ld_util_def.h"

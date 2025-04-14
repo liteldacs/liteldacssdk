@@ -6,7 +6,7 @@
 #define LDACS_SIM_UTIL_BASE64_H
 
 
-#include "../global/ldacs_sim.h"
+#include <libbase64.h>
 #include "ld_buffer.h"
 #include "ld_log.h"
 

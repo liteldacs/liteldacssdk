@@ -19,23 +19,15 @@
 #include <assert.h>
 #include <errno.h>
 #include <ctype.h>
-#include <gmssl/sm3.h>
-#include <gmssl/sm4.h>
 #include <stddef.h>
 #include <pthread.h>
 #include <time.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <arpa/inet.h>
-#include <utlist.h>
-#include <yaml.h>
-#include <gmssl/rand.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <cjson/cJSON.h>
-#include <libbase64.h>
-#include <uuid/uuid.h>
 #include <event2/event-config.h>
 #include <event2/event.h>
 #include <event2/event_struct.h>
@@ -47,9 +39,7 @@
 #include <event2/keyvalq_struct.h>
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
-#include <semaphore.h>
 #include <event2/thread.h>
-#include <sqlite3.h>
 #include <stdbool.h>
 #include "ldacs_def.h"
 

@@ -4,7 +4,7 @@
 
 #ifndef LDACS_SIM_UTIL_JSON_H
 #define LDACS_SIM_UTIL_JSON_H
-#include "../global/ldacs_sim.h"
+#include <cjson/cJSON.h>
 #include "ld_buffer.h"
 
 #define JSON_UNFORMAT 0

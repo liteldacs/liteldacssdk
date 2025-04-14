@@ -6,8 +6,7 @@
 #define TEST_CLIENT_CONFIG_H
 
 #include <linux/limits.h>
-
-#include "../global/ldacs_sim.h"
+#include <yaml.h>
 #include "ld_log.h"
 
 

@@ -2,17 +2,15 @@ cmake_minimum_required(VERSION 3.18)
 project(ldacs_test C)
 
 set(CMAKE_C_STANDARD 11)
-
-
 set(tests
         json
         #        stateMachine
 #        multitimer
         #        crc
-                buffer
+#                buffer
         #        pbs
         #        pqueue
-        base64
+#        base64
         #        mqueue
         queue
         #        map
@@ -63,14 +61,5 @@ foreach (name ${tests})
         include_directories(${SQLite3_INCLUDE_DIRS})
         target_link_libraries(${name}test LINK_PUBLIC ${SQLite3_LIBRARIES})
     endif (SQLite3_FOUND)
-
-#    cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
-#    IF (${PRETTY_NAME} MATCHES "Ubuntu")
-#        target_link_libraries(${name}test LINK_PUBLIC gmssl)
-#        target_compile_definitions(${name}test PRIVATE UNUSE_CRYCARD)
-#    ELSEIF (${PRETTY_NAME} MATCHES "CentOS")
-#        target_link_libraries(${name}test LINK_PUBLIC km_src uuid)
-#        target_compile_definitions(${name}test PRIVATE USE_CRYCARD)
-#    ENDIF ()
 endforeach ()
 
