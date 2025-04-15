@@ -327,7 +327,6 @@ bool pb_in_mac(pb_stream *ins, size_t mac_len, KEY_HANDLE key_med, verify_hmac_f
 
     /* 验证结果 */
     if (!verify_hmac(key_med, ins->cur, initial, len, mac_len)) {
-        log_buf(LOG_DEBUG, "to_veri", ins->cur, 32);
         log_error("MAC verify failed!");
         return FALSE;
     } else {
