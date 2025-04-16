@@ -109,7 +109,7 @@ inline void buffer_clear(buffer_t *pb) {
         pb->ptr = NULL;
         // pb->ptr_null = TRUE;
     }
-    zero(pb);
+//    zero(pb);
 }
 
 buffer_t *dupl_buffer(buffer_t *old) {

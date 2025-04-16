@@ -82,6 +82,7 @@ void event_switch(config_t *config, bool *seq_status, unsigned int *map_seq, yam
 void to_data(config_t *config, bool *seq_status, unsigned int *map_seq,
              yaml_parser_t *parser, yaml_event_t *event, FILE *fp);
 
+char * get_home_dir();
 
 
 #endif //TEST_CLIENT_CONFIG_H

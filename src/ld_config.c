@@ -2,6 +2,7 @@
 // Created by jiaxv on 23-8-4.
 //
 
+#include <pwd.h>
 #include "ld_config.h"
 
 int parse_config(config_t *config, char *yaml_path) {
@@ -209,3 +210,19 @@ void clean_prs(FILE *fp, yaml_parser_t *parser, yaml_event_t *event) {
     fclose(fp); /* Close file */
 }
 
+char *get_home_dir() {
+    uid_t uid = getuid();
+    struct passwd pwd;
+    struct passwd *result;
+    char *home_dir = calloc(1024, sizeof(char ));
+    char buf[1024] = {0}; // 适当调整缓冲区大小
+
+    int ret = getpwuid_r(uid, &pwd, buf, 1024, &result);
+    if (ret != 0 || result == NULL) {
+        perror("getpwuid_r");
+        return NULL;
+    }
+
+    memcpy(home_dir, pwd.pw_dir, strlen(pwd.pw_dir));
+    return home_dir;
+}
