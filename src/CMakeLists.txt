@@ -25,24 +25,6 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/global>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/global>
 )
-
-
-#include(ExternalProject)
-#set(BASE64_ROOT ${CMAKE_BINARY_DIR}/thirdparty/base64)
-#ExternalProject_Add(base64_dep
-#  PREFIX            ${BASE64_ROOT}
-#  GIT_REPOSITORY    https://github.com/aklomp/base64.git
-#  GIT_TAG           v0.5.1
-#  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${BASE64_ROOT}
-#  INSTALL_COMMAND   ${CMAKE_COMMAND} --build . --target install
-#)
-#
-#set ( FOO_LIB          ${BASE64_ROOT}/lib/foo.lib)
-#set ( FOO_INCLUDE_DIR  ${BASE64_ROOT}/include )
-#
-#ExternalProject_Get_property(base64_dep PREFIX)
-#message( STATUS "PREFIX = ${PREFIX}" )
-
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC pthread yaml base64 cjson)
 
 find_package(Ldacscrypto REQUIRED)

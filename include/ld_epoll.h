@@ -36,7 +36,7 @@ extern int core_epoll_wait(int epoll_fd, struct epoll_event *events,
 int core_epoll_del(int epoll_fd, int fd, uint32_t events,
                    struct epoll_event *pev);
 
-int core_epoll_add(int epoll_fd, int fd, struct epoll_event *pev);
+int core_epoll_add(int epoll_fd, int fd_p, struct epoll_event *pev);
 
 static inline int epoll_enable_in(int e_fd, struct epoll_event *ev, int fd) {
     if (EPOLL_IS_IN(ev))

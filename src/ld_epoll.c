@@ -31,6 +31,7 @@ int core_epoll_del(int epoll_fd, int fd, uint32_t events,struct epoll_event *pev
     (void)pev; /* Unused. Silent compiler warning. */
     return epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 }
-int core_epoll_add(int epoll_fd, int fd, struct epoll_event *pev) {
-    return epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, pev);
+
+int core_epoll_add(int epoll_fd, int fd_p, struct epoll_event *pev) {
+    return epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd_p, pev);
 }
