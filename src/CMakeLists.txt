@@ -25,7 +25,7 @@ target_include_directories(${PROJECT_NAME}
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/global>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include/global>
 )
-target_link_libraries(${PROJECT_NAME} LINK_PUBLIC pthread yaml base64 cjson)
+target_link_libraries(${PROJECT_NAME} LINK_PUBLIC pthread yaml base64 cjson event event_pthreads)
 
 find_package(Ldacscrypto REQUIRED)
 if (Ldacscrypto_FOUND)
