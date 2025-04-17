@@ -37,11 +37,11 @@ set(tests
         env
 )
 
-cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
-IF (${PRETTY_NAME} MATCHES "Ubuntu")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -g")
-    #    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=leak -g")
-ENDIF ()
+#cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
+#IF (${PRETTY_NAME} MATCHES "Ubuntu")
+#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -g")
+#    #    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=leak -g")
+#ENDIF ()
 INCLUDE_DIRECTORIES(/usr/local/include/ldacs)
 
 find_package(Ldacscrypto REQUIRED)
