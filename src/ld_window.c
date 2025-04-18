@@ -125,7 +125,7 @@ buffer_t *window_in_get(window_t *w) {
     uint8_t to_recv = w->to_recv_start;
     while (w->items[to_recv].is_processed == TRUE) {
         clear_window_item(&w->items[to_recv]);
-        log_warn("IN GET %d %d", to_recv, w->seq_sz);
+        // log_warn("IN GET %d %d", to_recv, w->seq_sz);
         to_recv = (to_recv + 1 ) % w->seq_sz;
         w->to_recv_start = to_recv;
     }

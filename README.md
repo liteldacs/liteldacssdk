@@ -7,10 +7,10 @@ LiteLdacs开发所需依赖，适用于libldcauc以及ldacs-combine项目
 
 ## 1. 依赖
 
-1. 安装libyaml、libevent、uthash、libcjson
+1. 安装libyaml、libevent、uthash、libcjson、libsqlite3
 ```shell
 sudo apt update && sudo apt upgrade
-sudo apt install libyaml-dev libevent-dev uthash-dev libcjson-dev
+sudo apt install libyaml-dev libevent-dev uthash-dev libcjson-dev libsqlite3-dev
 ```
 2. 拉取并安装base64
 ```shell
