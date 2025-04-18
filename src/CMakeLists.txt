@@ -69,6 +69,8 @@ install(
         DESTINATION /usr/local/lib/cmake/liteldacssdk
 )
 
+message("${CMAKE_INSTALL_PREFIX}")
+
 set(SO_PATH /usr/local/ldacs-cauc/lib)
 set(SO_CONFIG_DIR /etc/ld.so.conf.d)
 
