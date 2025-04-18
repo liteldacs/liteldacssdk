@@ -4,4 +4,5 @@ include("${CMAKE_CURRENT_LIST_DIR}/LiteLdacsSdkTargets.cmake")
 
 # 提供旧式变量（兼容 find_package 传统用法）
 set(LiteLdacsSdk_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/include/sdk")
+set(LiteLdacsSdk_INCLUDE_GLOBAL_DIRS "@CMAKE_INSTALL_PREFIX@/include/global")
 set(LiteLdacsSdk_LIBRARIES "@CMAKE_INSTALL_PREFIX@/lib")
