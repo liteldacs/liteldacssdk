@@ -9,9 +9,6 @@
 #include <yaml.h>
 #include "ld_log.h"
 
-
-
-
 typedef struct config_s {
     /* general configurations */
     bool debug;
@@ -32,7 +29,7 @@ typedef struct config_s {
     char gsc_addr[16];
     uint16_t gsc_port;
     char gsnf_addr[16];
-    char gsnf_addr_v6[16];
+    char gsnf_addr_v6[128];
     uint16_t gsnf_port;
 
     /* http */
