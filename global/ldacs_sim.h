@@ -40,7 +40,6 @@
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 #include <event2/thread.h>
-#include <stdbool.h>
 #include "ldacs_def.h"
 
 #endif //TEST_CLIENT_TEST_CLIENT_H

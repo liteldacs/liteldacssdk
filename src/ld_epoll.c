@@ -6,7 +6,6 @@
 
 struct epoll_event epoll_events[MAX_EVENTS];
 
-int epoll_fd = -1;
 
 int set_fd_nonblocking(int fd) {
     int flag = fcntl(fd, F_GETFL, 0);

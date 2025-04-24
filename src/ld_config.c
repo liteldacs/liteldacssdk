@@ -92,7 +92,8 @@ void to_data(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_par
     char *addr = "addr";
     char *gsnf_addr = "gsnf_addr";
     char *gsnf_addr_v6 = "gsnf_addr_v6";
-    char *gsnf_port = "gsnf_port";
+    char *gsnf_local_port = "gsnf_local_port";
+    char *gsnf_remote_port = "gsnf_remote_port";
 
     char *http_tag = "http";
     char *http_port = "http_port";
@@ -133,10 +134,14 @@ void to_data(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_par
             strcpy(config->addr, (char *)event->data.scalar.value);
         }
         //config->addr = (char *)event->data.scalar.value;
-    }  else if (!strcmp(buf, gsnf_port)) {
+    }  else if (!strcmp(buf, gsnf_local_port)) {
         yaml_event_delete(event);
         parse_next(parser, event);
-        config->gsnf_port = atoi((char *) event->data.scalar.value);
+        config->gsnf_local_port = atoi((char *) event->data.scalar.value);
+    }   else if (!strcmp(buf, gsnf_remote_port)) {
+        yaml_event_delete(event);
+        parse_next(parser, event);
+        config->gsnf_remote_port = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(buf, gsnf_addr)) {
         yaml_event_delete(event);
         parse_next(parser, event);

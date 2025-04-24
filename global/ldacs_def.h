@@ -9,6 +9,7 @@
 
 // back to <stdbool.h>
 // typedef enum { TRUE = 1, FALSE = 0 } bool;
+#include <stdbool.h>
 #define TRUE true
 #define FALSE false
 

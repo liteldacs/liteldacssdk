@@ -30,7 +30,8 @@ typedef struct config_s {
     uint16_t gsc_port;
     char gsnf_addr[16];
     char gsnf_addr_v6[128];
-    uint16_t gsnf_port;
+    uint16_t gsnf_local_port;
+    uint16_t gsnf_remote_port;
 
     /* http */
     bool use_http;

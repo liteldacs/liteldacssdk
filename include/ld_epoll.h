@@ -22,8 +22,6 @@
 #define EPOLL_IS_OUT(event) (event->events & EPOLLOUT)
 
 
-extern int epoll_fd;
-
 extern struct epoll_event epoll_events[MAX_EVENTS]; // global
 
 int set_fd_nonblocking(int fd);
