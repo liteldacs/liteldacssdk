@@ -45,3 +45,45 @@ int bytes_len(size_t n) {
     return i - 1;
 }
 
+int ld_split(const char *str, char ***argv) {
+    // 统计单词数量
+    int count = 0;
+    const char *p = str;
+    while (*p != '\0') {
+        while (*p == ' ') p++;
+        if (*p == '\0') break;
+        count++;
+        while (*p != ' ' && *p != '\0') p++;
+    }
+
+    // 分配指针数组，多一个位置存放NULL
+    *argv = (char **)malloc(sizeof(char *) * (count + 1));
+    if (!*argv) return 0;
+
+    int index = 0;
+    const char *start = str;
+    while (*start != '\0') {
+        while (*start == ' ') start++;
+        if (*start == '\0') break;
+        // 找到单词的结束位置
+        const char *end = start;
+        while (*end != ' ' && *end != '\0') end++;
+        // 计算单词长度并分配内存
+        int len = end - start;
+        char *token = (char *)malloc(len + 1);
+        if (!token) {
+            // 分配失败，释放已分配内存
+            for (int i = 0; i < index; i++) free((*argv)[i]);
+            free(*argv);
+            return 0;
+        }
+        // 复制单词并终止
+        strncpy(token, start, len);
+        token[len] = '\0';
+        (*argv)[index++] = token;
+        // 移动到下一个位置
+        start = end;
+    }
+    (*argv)[index] = NULL; // 数组以NULL结尾
+    return count;
+}

@@ -12,7 +12,8 @@ endif()
 message(${CMAKE_INSTALL_PREFIX})
 
 AUX_SOURCE_DIRECTORY(. SRC_LIST) #把当前目录(.)下所有源代码文件和头文件加入变量SRC_LIST
-add_library(${PROJECT_NAME} STATIC ${SRC_LIST})
+add_library(${PROJECT_NAME} STATIC ${SRC_LIST}
+        ../tests/str_test.c)
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC

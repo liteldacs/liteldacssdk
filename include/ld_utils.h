@@ -23,6 +23,7 @@ static char *get_ua_str(uint32_t value, char *str) {
     return str;
 }
 
+int ld_split(const char *str, char ***argv);
 
 
 

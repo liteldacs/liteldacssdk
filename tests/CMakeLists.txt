@@ -35,6 +35,7 @@ set(tests
         ipv6addr
         coredump
         env
+        str
 )
 
 #cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
