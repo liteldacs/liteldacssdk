@@ -99,6 +99,8 @@ void to_data(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_par
     char *http_port = "http_port";
     char *auto_auth = "auto_auth";
 
+    char *peer_server_port = "peer_server_port";
+
     if (!strcmp(buf, role)) {
         yaml_event_delete(event);
         parse_next(parser, event);
@@ -138,10 +140,14 @@ void to_data(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_par
         yaml_event_delete(event);
         parse_next(parser, event);
         config->gsnf_local_port = atoi((char *) event->data.scalar.value);
-    }   else if (!strcmp(buf, gsnf_remote_port)) {
+    }  else if (!strcmp(buf, gsnf_remote_port)) {
         yaml_event_delete(event);
         parse_next(parser, event);
         config->gsnf_remote_port = atoi((char *) event->data.scalar.value);
+    }   else if (!strcmp(buf, peer_server_port)) {
+        yaml_event_delete(event);
+        parse_next(parser, event);
+        config->peer_server_port = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(buf, gsnf_addr)) {
         yaml_event_delete(event);
         parse_next(parser, event);
@@ -178,7 +184,7 @@ void to_data(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_par
         yaml_event_delete(event);
         parse_next(parser, event);
         config->init_rl_freq = atof((char *) event->data.scalar.value);
-    } else if (!strcmp(buf, http_tag)) {
+    } else if (!strcmp(buf, http_tag) || !strcmp(buf, "gs") || !strcmp(buf, "gsnf")) {
         yaml_event_delete(event);
         parse_next(parser, event);
     } else {

@@ -9,6 +9,9 @@
 #include <yaml.h>
 #include "ld_log.h"
 
+
+
+
 typedef struct config_s {
     /* general configurations */
     bool debug;
@@ -32,6 +35,8 @@ typedef struct config_s {
     char gsnf_addr_v6[128];
     uint16_t gsnf_local_port;
     uint16_t gsnf_remote_port;
+
+    uint16_t peer_server_port;
 
     /* http */
     bool use_http;
