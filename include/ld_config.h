@@ -79,11 +79,7 @@ void parse_next(yaml_parser_t *parser, yaml_event_t *event);
 
 void clean_prs(FILE *fp, yaml_parser_t *parser, yaml_event_t *event);
 
-/* Parser actions */
-void event_switch(config_t *config, bool *seq_status, unsigned int *map_seq, yaml_parser_t *parser, yaml_event_t *event, FILE *fp);
 
-void to_data(config_t *config, bool *seq_status, unsigned int *map_seq,
-             yaml_parser_t *parser, yaml_event_t *event, FILE *fp);
 
 char * get_home_dir();
 
