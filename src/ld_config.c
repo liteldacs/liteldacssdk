@@ -6,24 +6,26 @@
 #include "ld_config.h"
 
 typedef struct {
-    char current_key[64];    // 当前正在解析的键名
-    bool expect_value;       // 是否期待处理值（例如：已解析键名，等待值）
-    bool in_sequence;        // 是否在序列中（处理列表项）
-    bool in_mapping;         // 是否在映射中（处理嵌套对象）
-} parse_state;
+    char *current_key;    // 当前正在解析的键名
+    bool seq_is_peers;
+} parse_context;
 
-static void to_data(config_t *config, parse_state *state, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) ;
-static void event_switch(config_t *config, parse_state *state, yaml_parser_t *parser, yaml_event_t *event, FILE *fp);
+static void to_data(config_t *config, parse_context *state, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) ;
+static void event_switch(config_t *config, parse_context *ctx, yaml_parser_t *parser, yaml_event_t *event, FILE *fp);
+
+static void init_config(config_t *config) {
+    // zero(config);
+    config->peers = calloc(10, sizeof(void *));
+    config->peer_count = 0;
+}
+
 
 int parse_config(config_t *config, char *yaml_path) {
-    init_config();
+    init_config(config);
     parser(config, yaml_path); /* Parse the path */
     /* Check if requested coil loops number is consistent with config file  */
     /* parsed_loops( &nlp, argv, &coil );*/
     return EXIT_SUCCESS;
-}
-
-void init_config() {
 }
 
 void realloc_coil() {
@@ -35,7 +37,7 @@ void parser(config_t *config, char *yaml_path) {
     FILE *fp = fopen(yaml_path, "r");
     yaml_parser_t parser;
     yaml_event_t event;
-    parse_state state = {0};
+    parse_context state = {0};
 
     init_prs(fp, &parser); /* Initiliaze parser & open file */
 
@@ -52,33 +54,16 @@ void parser(config_t *config, char *yaml_path) {
     clean_prs(fp, &parser, &event); /* clean parser & close file */
 }
 
-static void handle_key(config_t *config, parse_state *state, yaml_event_t *event) {
+static void handle_key(config_t *config, parse_context *ctx, yaml_event_t *event) {
     char *key = (char *)event->data.scalar.value;
-    strncpy(state->current_key, key, sizeof(state->current_key) - 1);
-    state->current_key[sizeof(state->current_key) - 1] = '\0';
+    strncpy(ctx->current_key, key, sizeof(ctx->current_key) - 1);
+    ctx->current_key[sizeof(ctx->current_key) - 1] = '\0';
 }
 
-void handle_value(config_t *config, parse_state *state, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) {
+void handle_value(config_t *config, parse_context *ctx, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) {
     char *value = (char *)event->data.scalar.value;
 
-    //     char *role = "role";
-    //     char *ua = "UA";
-    //     char *port = "port";
-    //     char *debug = "debug";
-    //     char *init_fl_freq = "init_fl_freq";
-    //     char *init_rl_freq = "init_rl_freq";
-    //     char *addr = "addr";
-    //     char *gsnf_addr = "gsnf_addr";
-    //     char *gsnf_addr_v6 = "gsnf_addr_v6";
-    //     char *gsnf_local_port = "gsnf_local_port";
-    //     char *gsnf_remote_port = "gsnf_remote_port";
-    //
-    //     char *http_tag = "http";
-    //     char *http_port = "http_port";
-    //     char *auto_auth = "auto_auth";
-    //
-    //     char *peer_server_port = "peer_server_port";
-    if (!strcmp(state->current_key, "role")) {
+    if (!strcmp(ctx->current_key, "role")) {
         char *role_str = (char *) event->data.scalar.value;
         if (!strcmp(role_str, "as")) {
             config->role = LD_AS;
@@ -95,55 +80,64 @@ void handle_value(config_t *config, parse_state *state, yaml_parser_t *parser, y
             clean_prs(fp, parser, event);
             exit(EXIT_FAILURE);
         }
-    }else if (!strcmp(state->current_key, "addr")) {
+    }else if (!strcmp(ctx->current_key, "addr")) {
         strncpy(config->addr, value, sizeof(config->addr) - 1);
-    } else if (!strcmp(state->current_key, "peers")) {
-    } else if (!strcmp(state->current_key, "UA")) {
+    }else if (!strcmp(ctx->current_key, "UA")) {
         config->UA = atoi((char *) event->data.scalar.value);
-    } else if (!strcmp(state->current_key, "port")) {
+    } else if (!strcmp(ctx->current_key, "port")) {
         config->port = atoi((char *) event->data.scalar.value);
-    } else if (!strcmp(state->current_key, "addr")) {
+    } else if (!strcmp(ctx->current_key, "addr")) {
         {
             zero(config->addr);
             strcpy(config->addr, (char *)event->data.scalar.value);
         }
         //config->addr = (char *)event->data.scalar.value;
-    }  else if (!strcmp(state->current_key, "gsnf_local_port")) {
+    }  else if (!strcmp(ctx->current_key, "gsnf_local_port")) {
         config->gsnf_local_port = atoi((char *) event->data.scalar.value);
-    }  else if (!strcmp(state->current_key, "gsnf_remote_port")) {
+    }  else if (!strcmp(ctx->current_key, "gsnf_remote_port")) {
         config->gsnf_remote_port = atoi((char *) event->data.scalar.value);
-    }   else if (!strcmp(state->current_key, "peer_server_port")) {
+    }   else if (!strcmp(ctx->current_key, "peer_server_port")) {
         config->peer_server_port = atoi((char *) event->data.scalar.value);
-    } else if (!strcmp(state->current_key, "gsnf_addr")) {
+    } else if (!strcmp(ctx->current_key, "gsnf_addr")) {
         {
             zero(config->gsnf_addr);
             strcpy(config->gsnf_addr, (char *)event->data.scalar.value);
         }
-        //config->addr = (char *)event->data.scalar.value;
-    }  else if (!strcmp(state->current_key, "gsnf_addr_v6")) {
+    }  else if (!strcmp(ctx->current_key, "gsnf_addr_v6")) {
         {
             zero(config->gsnf_addr_v6);
             strcpy(config->gsnf_addr_v6, (char *)event->data.scalar.value);
         }
-        //config->addr = (char *)event->data.scalar.value;
-    } else if (!strcmp(state->current_key, "http_port")) {
+    } else if (!strcmp(ctx->current_key, "http_port")) {
         config->http_port = atoi((char *) event->data.scalar.value);
-    } else if (!strcmp(state->current_key, "auto_auth")) {
+    } else if (!strcmp(ctx->current_key, "auto_auth")) {
         config->auto_auth = atoi((char *) event->data.scalar.value) == 1 ? TRUE : FALSE;
-    } else if (!strcmp(state->current_key, "debug")) {
+    } else if (!strcmp(ctx->current_key, "debug")) {
         config->debug = atoi((char *) event->data.scalar.value);
-    } else if (!strcmp(state->current_key, "init_fl_freq")) {
+    } else if (!strcmp(ctx->current_key, "init_fl_freq")) {
         config->init_fl_freq = atof((char *) event->data.scalar.value);
-    } else if (!strcmp(state->current_key, "init_rl_freq")) {
+    } else if (!strcmp(ctx->current_key, "init_rl_freq")) {
         config->init_rl_freq = atof((char *) event->data.scalar.value);
+    }  else if (!strcmp(ctx->current_key, "peer_addr")) {
+        if (ctx->seq_is_peers){
+            strcpy(config->peers[config->peer_count]->peer_addr, (char *)event->data.scalar.value);
+        }
+    } else if (!strcmp(ctx->current_key, "peer_UA")) {
+        if (ctx->seq_is_peers) {
+            config->peers[config->peer_count]->peer_UA = atoi((char *) event->data.scalar.value);
+        }
+    } else if (!strcmp(ctx->current_key, "peer_port")) {
+        if (ctx->seq_is_peers) {
+            config->peers[config->peer_count]->peer_port = atoi((char *) event->data.scalar.value);
+        }
     } else {
-        printf("\n -ERROR: Unknow variable in config file: %s\n", state->current_key);
+        printf("\n -ERROR: Unknow variable in config file: %s\n", ctx->current_key);
         clean_prs(fp, parser, event);
         exit(EXIT_FAILURE);
     }
 }
 
-static void event_switch(config_t *config, parse_state *state, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) {
+static void event_switch(config_t *config, parse_context *ctx, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) {
     switch (event->type) {
         case YAML_STREAM_START_EVENT:
             break;
@@ -154,33 +148,34 @@ static void event_switch(config_t *config, parse_state *state, yaml_parser_t *pa
         case YAML_DOCUMENT_END_EVENT:
             break;
         case YAML_SEQUENCE_START_EVENT:
-            state->in_sequence = TRUE;
+            if (!strcmp(ctx->current_key, "peers")) {
+                ctx->seq_is_peers = TRUE;
+            }
             break;
         case YAML_SEQUENCE_END_EVENT:
-            state->in_sequence = FALSE;
+            if (ctx->seq_is_peers)   ctx->seq_is_peers = FALSE;
             break;
         case YAML_MAPPING_START_EVENT:
-            state->in_mapping = TRUE;
-            state->expect_value = FALSE;
+            if (ctx->seq_is_peers) {
+                config->peers[config->peer_count] = calloc(1, sizeof(peer_gs_t));
+            }
+            ctx->current_key = NULL;
             break;
         case YAML_MAPPING_END_EVENT:
-
-            state->in_mapping = FALSE;
-            state->expect_value = FALSE;
+            if (ctx->seq_is_peers) {
+                config->peer_count++;
+            }
             break;
         case YAML_ALIAS_EVENT:
             printf(" ERROR: Got alias (anchor %s)\n",  event->data.alias.anchor);
             exit(EXIT_FAILURE);
         case YAML_SCALAR_EVENT:
-            if (state->in_sequence == TRUE) {
-                state->expect_value = TRUE;
-            }
-            if (state->expect_value) {
-                handle_value(config, state, parser, event, fp);
-                state->expect_value = false;
+            char* value = (char*)event->data.scalar.value;
+            if (ctx->current_key) {
+                handle_value(config, ctx, parser, event, fp);
+                ctx->current_key = NULL;
             }else {
-                handle_key(config, state, event);
-                state->expect_value = true; // 下一个事件是值
+                ctx->current_key = strdup(value);
             }
             break;
         case YAML_NO_EVENT:
@@ -208,6 +203,7 @@ void init_prs(FILE *fp, yaml_parser_t *parser) {
     }
 
     yaml_parser_set_input_file(parser, fp);
+
 }
 
 void clean_prs(FILE *fp, yaml_parser_t *parser, yaml_event_t *event) {

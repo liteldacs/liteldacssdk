@@ -10,7 +10,11 @@
 #include "ld_log.h"
 
 
-
+typedef struct peer_gs_s {
+    char peer_addr[128];
+    int peer_port;
+    uint32_t peer_UA;
+} peer_gs_t;
 
 typedef struct config_s {
     /* general configurations */
@@ -37,6 +41,8 @@ typedef struct config_s {
     uint16_t gsnf_remote_port;
 
     uint16_t peer_server_port;
+    peer_gs_t **peers;
+    size_t peer_count;
 
     /* http */
     bool use_http;
@@ -63,9 +69,6 @@ extern config_t config;
 /* Prototypes --------------------------------------------------------- */
 
 int parse_config(config_t *config, char *yaml_path) ;
-
-/* Struct initialization */
-void init_config();
 
 void realloc_coil();
 
