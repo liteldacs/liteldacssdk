@@ -16,6 +16,12 @@ typedef struct peer_gs_s {
     uint32_t peer_UA;
 } peer_gs_t;
 
+typedef struct direct_gs_s {
+    char dir_addr[128];
+    int dir_port;
+    uint32_t dir_UA;
+} direct_gs_t;
+
 typedef struct config_s {
     /* general configurations */
     bool debug;
@@ -43,6 +49,10 @@ typedef struct config_s {
     uint16_t peer_server_port;
     peer_gs_t **peers;
     size_t peer_count;
+
+    /* unmerged */
+    direct_gs_t **dir_gss;
+    size_t dir_gs_count;
 
     /* http */
     bool use_http;

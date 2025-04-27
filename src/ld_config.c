@@ -8,6 +8,7 @@
 typedef struct {
     char *current_key;    // 当前正在解析的键名
     bool seq_is_peers;
+    bool seq_is_direct_gs;
 } parse_context;
 
 static void to_data(config_t *config, parse_context *state, yaml_parser_t *parser, yaml_event_t *event, FILE *fp) ;
@@ -17,6 +18,8 @@ static void init_config(config_t *config) {
     // zero(config);
     config->peers = calloc(10, sizeof(void *));
     config->peer_count = 0;
+    config->dir_gss = calloc(10, sizeof(void *));
+    config->dir_gs_count = 0;
 }
 
 
@@ -118,7 +121,7 @@ void handle_value(config_t *config, parse_context *ctx, yaml_parser_t *parser, y
         config->init_fl_freq = atof((char *) event->data.scalar.value);
     } else if (!strcmp(ctx->current_key, "init_rl_freq")) {
         config->init_rl_freq = atof((char *) event->data.scalar.value);
-    }  else if (!strcmp(ctx->current_key, "peer_addr")) {
+    } else if (!strcmp(ctx->current_key, "peer_addr")) {
         if (ctx->seq_is_peers){
             strcpy(config->peers[config->peer_count]->peer_addr, (char *)event->data.scalar.value);
         }
@@ -129,6 +132,18 @@ void handle_value(config_t *config, parse_context *ctx, yaml_parser_t *parser, y
     } else if (!strcmp(ctx->current_key, "peer_port")) {
         if (ctx->seq_is_peers) {
             config->peers[config->peer_count]->peer_port = atoi((char *) event->data.scalar.value);
+        }
+    }  else if (!strcmp(ctx->current_key, "dir-gs-addr")) {
+        if (ctx->seq_is_direct_gs){
+            strcpy(config->dir_gss[config->dir_gs_count]->dir_addr, (char *)event->data.scalar.value);
+        }
+    } else if (!strcmp(ctx->current_key, "dir-gs-port")) {
+        if (ctx->seq_is_direct_gs) {
+            config->dir_gss[config->dir_gs_count]->dir_UA = atoi((char *) event->data.scalar.value);
+        }
+    } else if (!strcmp(ctx->current_key, "dir-gs-UA")) {
+        if (ctx->seq_is_direct_gs) {
+            config->dir_gss[config->dir_gs_count]->dir_port = atoi((char *) event->data.scalar.value);
         }
     } else {
         printf("\n -ERROR: Unknow variable in config file: %s\n", ctx->current_key);
@@ -151,19 +166,29 @@ static void event_switch(config_t *config, parse_context *ctx, yaml_parser_t *pa
             if (!strcmp(ctx->current_key, "peers")) {
                 ctx->seq_is_peers = TRUE;
             }
+            if (!strcmp(ctx->current_key, "direct-gs")) {
+                ctx->seq_is_direct_gs = TRUE;
+            }
             break;
         case YAML_SEQUENCE_END_EVENT:
             if (ctx->seq_is_peers)   ctx->seq_is_peers = FALSE;
+            if (ctx->seq_is_direct_gs)   ctx->seq_is_direct_gs = FALSE;
             break;
         case YAML_MAPPING_START_EVENT:
             if (ctx->seq_is_peers) {
                 config->peers[config->peer_count] = calloc(1, sizeof(peer_gs_t));
+            }
+            if (ctx->seq_is_direct_gs) {
+                config->dir_gss[config->dir_gs_count] = calloc(1, sizeof(direct_gs_t));
             }
             ctx->current_key = NULL;
             break;
         case YAML_MAPPING_END_EVENT:
             if (ctx->seq_is_peers) {
                 config->peer_count++;
+            }
+            if (ctx->seq_is_direct_gs) {
+                config->dir_gs_count++;
             }
             break;
         case YAML_ALIAS_EVENT:
