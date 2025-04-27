@@ -13,14 +13,9 @@
 typedef struct peer_gs_s {
     char peer_addr[128];
     int peer_port;
-    uint32_t peer_UA;
+    uint32_t peer_SAC;
+    pthread_t th;
 } peer_gs_t;
-
-typedef struct direct_gs_s {
-    char dir_addr[128];
-    int dir_port;
-    uint32_t dir_UA;
-} direct_gs_t;
 
 typedef struct config_s {
     /* general configurations */
@@ -50,9 +45,6 @@ typedef struct config_s {
     peer_gs_t **peers;
     size_t peer_count;
 
-    /* unmerged */
-    direct_gs_t **dir_gss;
-    size_t dir_gs_count;
 
     /* http */
     bool use_http;
@@ -63,6 +55,7 @@ typedef struct config_s {
     /* role tags */
     uint32_t UA;
     uint8_t ua_gsc; /* temporary, currently for gs */
+    uint8_t GS_SAC;
 
     /* security configurations */
     uint8_t sec_mac_len;
