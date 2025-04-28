@@ -55,7 +55,7 @@ typedef struct config_s {
     /* role tags */
     uint32_t UA;
     uint8_t ua_gsc; /* temporary, currently for gs */
-    uint8_t GS_SAC;
+    uint16_t GS_SAC;
 
     /* security configurations */
     uint8_t sec_mac_len;

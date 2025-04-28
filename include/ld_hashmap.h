@@ -64,7 +64,7 @@ void hashmap_set_grow_by_power(struct hashmap *map, size_t power);
 // DEPRECATED: use `hashmap_new_with_allocator`
 void hashmap_set_allocator(void *(*malloc)(size_t), void (*free)(void *));
 
-void print_nodes(struct hashmap *map, void (*print_func)(void *));
+void hashmap_print_nodes(struct hashmap *map, void (*print_func)(void *));
 
 #endif
 #endif //LDACS_SIM_UTIL_HASHMAP_H
