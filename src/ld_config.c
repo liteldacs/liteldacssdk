@@ -125,7 +125,7 @@ void handle_value(config_t *config, parse_context *ctx, yaml_parser_t *parser, y
         if (ctx->seq_is_peers){
             strcpy(config->peers[config->peer_count]->peer_addr, (char *)event->data.scalar.value);
         }
-    } else if (!strcmp(ctx->current_key, "peer_UA")) {
+    } else if (!strcmp(ctx->current_key, "peer_SAC")) {
         if (ctx->seq_is_peers) {
             config->peers[config->peer_count]->peer_SAC = atoi((char *) event->data.scalar.value);
         }
