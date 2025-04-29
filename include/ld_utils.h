@@ -18,7 +18,7 @@ int bytes_len(size_t n);
 #define UA_STR(name) char (name)[11] = {0}
 
 static char *get_ua_str(uint32_t value, char *str) {
-    if (value >= (1 << UALEN)) return NULL;
+    if (value >= (1 << UA_LEN)) return NULL;
     sprintf(str, "%09d", value);
     return str;
 }

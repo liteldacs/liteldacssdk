@@ -85,8 +85,6 @@ typedef enum {
     LD_ERR_FAIL_EXEC_SQL,
 } l_err;
 
-#define UALEN 28
-
 #define IPVERSION_4 4
 #define IPVERSION_6 6
 
@@ -125,13 +123,9 @@ typedef enum {
 #define LELEM(opt) (1ULL << (opt)) //ULL -> unsigned long long
 #define BITS_PER_BYTE 8
 
-#define UA_LEN 50
+#define UA_LEN 28
 #define MAX_PATH_LEN 4096
 #define KEY_SIZE (4)
-
-#define UA_AS_LEN (8)
-#define UA_GS_LEN (4)
-#define UA_GSC_LEN (4)
 
 typedef enum {
     LD_UNDEFINED =  0x0,
