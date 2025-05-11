@@ -70,7 +70,7 @@ bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role);
 
 const struct role_propt *get_role_propt(int s_r);
 
-void server_entity_setup(uint16_t port, net_ctx_t *opt);
+void server_entity_setup(uint16_t port, net_ctx_t *opt, int s_r);
 
 void *client_entity_setup(net_ctx_t *opt, char *remote_addr, int remote_port, int local_port);
 

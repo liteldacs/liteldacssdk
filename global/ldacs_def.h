@@ -149,7 +149,9 @@ typedef enum {
     LD_UDP_CLIENT,
     LD_UDP_SERVER,
     LD_TCP_CLIENT,
+    LD_TCPV6_CLIENT,
     LD_TCP_SERVER,
+    LD_TCPV6_SERVER,
 } sock_roles;
 
 

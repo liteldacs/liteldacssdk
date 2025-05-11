@@ -101,16 +101,19 @@ static int make_std_tcpv6_connect(struct sockaddr_in6 *to_conn_addr, char *addr,
 
 
     /* 绑定本地端口 */
-    struct sockaddr_in6 local_addr;
-    local_addr.sin6_family = AF_INET6;
-    local_addr.sin6_port = htons(local_port); // 转换为网络字节序
-    local_addr.sin6_addr = in6addr_any; // 允许任意本地地址绑定
+    if (local_port != 0) {
+        struct sockaddr_in6 local_addr;
+        local_addr.sin6_family = AF_INET6;
+        local_addr.sin6_port = htons(local_port); // 转换为网络字节序
+        local_addr.sin6_addr = in6addr_any; // 允许任意本地地址绑定
 
-    if (bind(fd, (struct sockaddr *) &local_addr, sizeof(local_addr)) == -1) {
-        perror("bind failed");
-        close(fd);
-        return -1;
+        if (bind(fd, (struct sockaddr *) &local_addr, sizeof(local_addr)) == -1) {
+            perror("bind failed");
+            close(fd);
+            return -1;
+        }
     }
+
     //TODO: 改成死循环，持续1min
     int i = RECONNECT;
     while (i--) {
@@ -205,11 +208,7 @@ static int make_std_tcpv6_accept(basic_conn_t *bc) {
     socklen_t saddrlen = sizeof(struct sockaddr_in6);
     if (bc->opt->server_fd == DEFAULT_FD) return DEFAULT_FD;
     while ((fd = accept(bc->opt->server_fd, (struct sockaddr *) to_conn_addr, &saddrlen)) == ERROR) {
-        if (errno != EINTR) {
-            // 如果不是由信号中断，则报告错误并退出
-            perror("accept");
-            return ERROR;
-        }
+
     }
 
     return fd;
@@ -227,10 +226,17 @@ static int init_std_tcp_accept_handler(basic_conn_t *bc) {
     return make_std_tcp_accept(bc);
 }
 
+static int init_std_tcpv6_accept_handler(basic_conn_t *bc) {
+    return make_std_tcpv6_accept(bc);
+}
+
+
 
 const struct role_propt role_propts[] = {
     {LD_TCP_CLIENT, NULL, init_std_tcp_conn_handler},
+    {LD_TCPV6_CLIENT, NULL, init_std_tcpv6_conn_handler},
     {LD_TCP_SERVER, make_std_tcp_server, init_std_tcp_accept_handler},
+    {LD_TCPV6_SERVER, make_std_tcpv6_server, init_std_tcpv6_accept_handler},
     {0, 0, 0},
 };
 
@@ -253,8 +259,8 @@ static int add_listen_fd(int epoll_fd, int server_fd) {
     return core_epoll_add(epoll_fd, server_fd, &ev);
 }
 
-void server_entity_setup(uint16_t port, net_ctx_t *opt) {
-    const struct role_propt *rp = get_role_propt(LD_TCP_SERVER);
+void server_entity_setup(uint16_t port, net_ctx_t *opt, int s_r) {
+    const struct role_propt *rp = get_role_propt(s_r);
 
     opt->server_fd = rp->server_make(port);
 
