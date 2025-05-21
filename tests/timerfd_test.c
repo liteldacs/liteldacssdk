@@ -12,7 +12,7 @@
 // #define SF_INTVL 240000000
 // #define MF_INTVL 58000000
 #define SF_INTVL 250000000
-#define MF_INTVL 50000000
+#define MF_INTVL 60000000
 
 void *mf_event(void *args);
 void *sf_event(void *args);
@@ -70,7 +70,9 @@ int main() {
 
     {
 
-        sleep(1);
+        // usleep(800000);
+        usleep(1000000);
+        log_warn("-> re");
         reregister_gtimer(&sf_global_cb);
     }
     sleep(100);

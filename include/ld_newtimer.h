@@ -60,6 +60,7 @@ typedef struct stimer_ev_s {
 typedef struct ld_gtimer_t {
     struct itimerspec spec;
     ld_gtimer_handler_t handler;
+    bool is_reg;
 }ld_gtimer_t;
 
 

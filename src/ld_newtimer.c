@@ -200,6 +200,8 @@ l_err register_gtimer(ld_gtimer_t *gtimer) {
     pthread_create(&handler->th, NULL, start_gtimer, gtimer);
     pthread_detach(handler->th);
 
+    gtimer->is_reg == TRUE;
+
     return LD_OK;
 }
 
@@ -210,6 +212,8 @@ l_err unregister_gtimer(ld_gtimer_t *gtimer) {
     close(handler->epoll_fd);
     memset(handler, 0, sizeof(ld_gtimer_handler_t));
     ld_unlock(&handler->mutex);
+
+    gtimer->is_reg = FALSE;
     return LD_OK;
 }
 
