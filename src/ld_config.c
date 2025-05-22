@@ -176,7 +176,7 @@ static void event_switch(config_t *config, parse_context *ctx, yaml_parser_t *pa
         case YAML_ALIAS_EVENT:
             printf(" ERROR: Got alias (anchor %s)\n",  event->data.alias.anchor);
             exit(EXIT_FAILURE);
-        case YAML_SCALAR_EVENT:
+        case YAML_SCALAR_EVENT: {
             char* value = (char*)event->data.scalar.value;
             if (ctx->current_key) {
                 handle_value(config, ctx, parser, event, fp);
@@ -185,6 +185,7 @@ static void event_switch(config_t *config, parse_context *ctx, yaml_parser_t *pa
                 ctx->current_key = strdup(value);
             }
             break;
+        }
         case YAML_NO_EVENT:
             puts(" ERROR: No event!");
             exit(EXIT_FAILURE);
