@@ -101,7 +101,7 @@ void buffer_freeptr(buffer_t *pb) {
 }
 
 inline void buffer_clear(buffer_t *pb) {
-    // log_buf(LOG_WARN, "TO CLEAR", pb->ptr, pb->len);
+    // log_buf(LOG_INFO, "TO CLEAR", pb->ptr, pb->len);
     // if (pb != NULL && pb->ptr_null == FALSE) {
     if (pb != NULL) {
         pb->len = 0;

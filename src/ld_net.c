@@ -302,7 +302,7 @@ l_err defalut_send_pkt(basic_conn_t *bc, void *pkg, struct_desc_t *desc, l_err (
         mid_func(buf, args);
     }
     cat_to_buffer(buf, pbs.start, pbs_offset(&pbs));
-    log_buf(LOG_FATAL, "Send OUT", buf->ptr, buf->len);
+    log_buf(LOG_INFO, "Send OUT", buf->ptr, buf->len);
 
     lfqueue_put(bc->write_pkts, buf);
     net_epoll_out(bc->opt->epoll_fd, bc);

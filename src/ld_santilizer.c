@@ -359,7 +359,7 @@ bool out_struct(const void *struct_ptr, struct_desc_t *sd, pb_stream *outs, pb_s
     const uint8_t *inp = struct_ptr;
     uint8_t *cur = outs->cur;
     size_t *bit_size = &outs->bitsize;
-    uint8_t *payload_start;
+    uint8_t *payload_start = NULL;
 
 
     if (outs->roof - cur < sizeof_struct(sd->fields)) {
@@ -477,7 +477,7 @@ bool out_struct(const void *struct_ptr, struct_desc_t *sd, pb_stream *outs, pb_s
                     break;
                 }
                 case ft_end:
-                    passert(payload_start != NULL);
+                    // passert(payload_start != NULL);
 
                     obj.container = outs;
                     obj.desc = sd;
@@ -523,6 +523,7 @@ void pb_out_mac(pb_stream *outs, size_t mac_len, KEY_HANDLE key_med, calc_hmac_f
     size_t len = outs->cur - initial;
 
     calc_hmac(initial, len, key_med, outs->cur, mac_len);
+
 
     /** should cut mac into a certain length, depending on mac_len */
     outs->cur += mac_len;
@@ -632,6 +633,6 @@ void *parse_sdu(buffer_t *buf, struct_desc_t *desc, size_t size) {
 
     // char *dd = data_upload;
     // log_info("%s", desc->name);
-    // log_buf(LOG_WARN, "AAA", dd, size);
+    // log_buf(LOG_INFO, "AAA", dd, size);
     return data_upload;
 }

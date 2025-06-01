@@ -71,7 +71,7 @@ int main() {
     uint8_t src[4] = {0x02, 0x04, 0x4E, 0x0F};
     uint8_t dst[4] = {0};
     bit_rightshift(src, 4, dst, 1);
-    log_buf(LOG_FATAL, "AAAA", dst, 4);
+    log_buf(LOG_INFO, "AAAA", dst, 4);
     return 0;
 }
 
