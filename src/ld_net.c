@@ -9,7 +9,7 @@
 
 static int server_shutdown(int server_fd);
 
-static bool connecion_is_expired(basic_conn_t *bcp, int timeout);
+static bool connecion_is_expired(basic_conn_t *bcp);
 
 static int connection_register(basic_conn_t *bc, int64_t factor);
 
@@ -26,19 +26,21 @@ static void server_connection_prune(net_ctx_t *opt);
 static int make_std_tcp_connect(struct sockaddr_in *to_conn_addr, char *addr, int remote_port, int local_port) {
     struct in_addr s;
     int fd;
-    int enable = SO_REUSEADDR;
 
-    struct timeval timeout = {
-        .tv_sec = 5, /* after 5 seconds connect() will timeout  */
-        .tv_usec = 0,
-    };
 
     inet_pton(AF_INET, addr, &s);
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == ERROR)
         return ERROR;
 
+    int enable = SO_REUSEADDR;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
-    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+
+    // struct timeval timeout = {
+    //     .tv_sec = 5, /* after 5 seconds connect() will timeout  */
+    //     .tv_usec = 0,
+    // };
+    //
+    // setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 
     zero(to_conn_addr);
     to_conn_addr->sin_family = AF_INET;
@@ -79,19 +81,20 @@ static int make_std_tcp_connect(struct sockaddr_in *to_conn_addr, char *addr, in
 static int make_std_tcpv6_connect(struct sockaddr_in6 *to_conn_addr, char *addr, int remote_port, int local_port) {
     struct in6_addr s;
     int fd;
-    int enable = SO_REUSEADDR;
 
-    struct timeval timeout = {
-        .tv_sec = 5, /* after 5 seconds connect() will timeout  */
-        .tv_usec = 0,
-    };
 
     inet_pton(AF_INET6, addr, &s);
     if ((fd = socket(AF_INET6, SOCK_STREAM, 0)) == ERROR)
         return ERROR;
 
+    int enable = SO_REUSEADDR;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
-    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+
+    // struct timeval timeout = {
+    //     .tv_sec = 5, /* after 5 seconds connect() will timeout  */
+    //     .tv_usec = 0,
+    // };
+    // setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 
     zero(to_conn_addr);
     to_conn_addr->sin6_family = AF_INET6;
@@ -394,6 +397,7 @@ void *net_setup(void *args) {
     int nfds;
     int i;
     net_ctx_t *net_ctx = args;
+
     while (TRUE) {
         nfds = core_epoll_wait(net_ctx->epoll_fd, epoll_events, MAX_EVENTS, 20);
 
@@ -414,8 +418,10 @@ void *net_setup(void *args) {
                 int status;
                 assert(bc != NULL);
 
-                if (connecion_is_expired(bc, net_ctx->timeout))
+                if (connecion_is_expired(bc)) {
+                    log_warn("Expired connection");
                     continue;
+                }
 
                 if (curr_event->events & EPOLLIN) {
                     //recv
@@ -427,6 +433,7 @@ void *net_setup(void *args) {
                 }
 
                 if (status == ERROR) {
+                    log_warn("==================");
                     connecion_set_expired(bc);
                 } else {
                     connecion_set_reactivated(bc);
@@ -502,10 +509,10 @@ static void connection_set_nodelay(int fd) {
     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
 }
 
-bool connecion_is_expired(basic_conn_t *bc, int timeout) {
+bool connecion_is_expired(basic_conn_t *bc) {
     heap_t *conn_hp = get_heap(&bc->opt->hd_conns, bc);
     int64_t active_time = conn_hp->factor;
-    return timeout ? (time(NULL) - active_time > timeout) : FALSE;
+    return bc->opt->timeout ? (time(NULL) - active_time > bc->opt->timeout) : FALSE;
 }
 
 void connecion_set_reactivated(basic_conn_t *bc) {
@@ -549,7 +556,6 @@ void connection_unregister(basic_conn_t *bc) {
 void connection_close(basic_conn_t *bc) {
     passert(bc != NULL);
     ABORT_ON(bc->fd == ERROR, "FD ERROR");
-
 
     core_epoll_del(bc->opt->epoll_fd, bc->fd, 0, NULL);
     if (close(bc->fd) == ERROR) {
