@@ -64,6 +64,10 @@ typedef struct basic_conn_s {
     char *remote_addr;
     int remote_port;
     int local_port;
+
+
+    // buffer_t *partial_write_buf;  // 部分发送的buffer
+    // size_t write_offset;          // 已发送字节数
 } basic_conn_t;
 
 bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role);

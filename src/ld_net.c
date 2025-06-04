@@ -354,25 +354,78 @@ static int write_packet(basic_conn_t *bc) {
         free_buffer(b);
 
         /* delay the next transmission */
-        usleep(1000);
+        // usleep(1000);
 
         if (!len) {
             return ERROR;
         }
     }
     return OK;
+
+    // while (1) {
+    //     buffer_t *b = bc->partial_write_buf;
+    //
+    //     // 获取待发送数据
+    //     if (!b) {
+    //         if (lfqueue_get(bc->write_pkts, (void**)&b) != 0)
+    //             return OK; // 队列空
+    //         bc->partial_write_buf = b;
+    //         bc->write_offset = 0;
+    //     }
+    //
+    //     size_t total_len = b->len;
+    //     const uint8_t *send_ptr = b->ptr + bc->write_offset;
+    //     size_t remain_len = total_len - bc->write_offset;
+    //
+    //     // 非阻塞发送
+    //     ssize_t sent = write(bc->fd, send_ptr, remain_len);
+    //     if (sent < 0) {
+    //         if (errno == EAGAIN || errno == EWOULDBLOCK) {
+    //             return AGAIN; // 需要等待下次EPOLLOUT
+    //         }
+    //         return ERROR; // 真实错误
+    //     }
+    //
+    //     // 更新发送位置
+    //     bc->write_offset += sent;
+    //
+    //     // 检查是否完成
+    //     if (bc->write_offset >= total_len) {
+    //         free_buffer(b);
+    //         bc->partial_write_buf = NULL;
+    //         bc->write_offset = 0;
+    //     } else {
+    //         return AGAIN; // 还有数据待发送
+    //     }
+    // }
 }
 
 static int response_send_buffer(basic_conn_t *bc) {
-    int status;
+    int status = write_packet(bc);
+    // if (status != OK) {
+    //     return status;
+    // } else {
+    //     bc->trans_done = TRUE;
+    //     return OK;
+    // }
 
-    status = write_packet(bc);
-    if (status != OK) {
-        return status;
-    } else {
-        bc->trans_done = TRUE;
-        return OK;
+    switch (status) {
+        case OK:
+            net_epoll_in(bc->opt->epoll_fd, bc);
+            bc->trans_done = TRUE;
+            break;
+
+        case AGAIN:
+            // 保持EPOLLOUT等待剩余数据
+            break;
+
+        case ERROR:
+    bc->trans_done = TRUE;
+            connecion_set_expired(bc);
+            break;
     }
+
+    return status;
 }
 
 
