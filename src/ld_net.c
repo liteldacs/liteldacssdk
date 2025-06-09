@@ -452,7 +452,7 @@ void *net_setup(void *args) {
     net_ctx_t *net_ctx = args;
 
     while (TRUE) {
-        nfds = core_epoll_wait(net_ctx->epoll_fd, epoll_events, MAX_EVENTS, 20);
+        nfds = core_epoll_wait(net_ctx->epoll_fd, epoll_events, MAX_EVENTS, -1);
 
         if (nfds == ERROR) {
             // if not caused by signal, cannot recover
@@ -475,22 +475,44 @@ void *net_setup(void *args) {
                     log_warn("Expired connection");
                     continue;
                 }
+                bool should_reactivate = false;
+                bool has_error = false;
 
                 if (curr_event->events & EPOLLIN) {
-                    //recv
-                    status = request_handle(bc);
+                    if (request_handle(bc) == OK) {
+                        should_reactivate = true;
+                    } else {
+                        has_error = true;
+                    }
                 }
                 if (curr_event->events & EPOLLOUT) {
-                    //send
-                    status = response_handle(bc);
+                    if (response_handle(bc) == OK) {
+                        should_reactivate = true;
+                    } else {
+                        has_error = true;
+                    }
                 }
 
-                if (status == ERROR) {
-                    log_warn("==================");
+                if (has_error) {
                     connecion_set_expired(bc);
-                } else {
+                } else if (should_reactivate) {
                     connecion_set_reactivated(bc);
                 }
+
+                // if (curr_event->events & EPOLLIN) {
+                //     //recv
+                //     status = request_handle(bc);
+                // }
+                // if (curr_event->events & EPOLLOUT) {
+                //     //send
+                //     status = response_handle(bc);
+                // }
+                //
+                // if (status == ERROR) {
+                //     connecion_set_expired(bc);
+                // } else {
+                //     connecion_set_reactivated(bc);
+                // }
             }
         }
         server_connection_prune(net_ctx);
