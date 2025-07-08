@@ -81,18 +81,16 @@ void handle_value(config_t *config, parse_context *ctx, yaml_parser_t *parser, y
             clean_prs(fp, parser, event);
             exit(EXIT_FAILURE);
         }
-    }else if (!strcmp(ctx->current_key, "addr")) {
-        strncpy(config->addr, value, sizeof(config->addr) - 1);
     }else if (!strcmp(ctx->current_key, "UA")) {
         config->UA = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(ctx->current_key, "GS-SAC")) {
         config->GS_SAC = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(ctx->current_key, "port")) {
         config->port = atoi((char *) event->data.scalar.value);
-    } else if (!strcmp(ctx->current_key, "addr")) {
+    } else if (!strcmp(ctx->current_key, "ipv6_address")) {
         {
             zero(config->addr);
-            strcpy(config->addr, (char *)event->data.scalar.value);
+            strcpy(config->addr, (char *) event->data.scalar.value);
         }
         //config->addr = (char *)event->data.scalar.value;
     }  else if (!strcmp(ctx->current_key, "gsnf_local_port")) {

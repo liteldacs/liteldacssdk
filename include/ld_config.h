@@ -29,13 +29,13 @@ typedef struct config_s {
     double init_fl_freq;
     double init_rl_freq;
     bool is_merged;
+    bool is_beihang;
+    bool is_e304;
 
     /* net */
     uint8_t ip_ver;
     char addr[16];
     uint16_t port; /* listen port */
-    char gsc_addr[16];
-    uint16_t gsc_port;
     char gsnf_addr[16];
     char gsnf_addr_v6[128];
     uint16_t gsnf_local_port;

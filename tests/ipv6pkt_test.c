@@ -8,7 +8,6 @@
 int main() {
     const char *data = "ABBA";
     const char pkt[2048] = {0};
-
     int pkt_len =  construct_ipv6_udp_packet_to_char("2001::100", "2001::200", "5000", "5001", data, 4, pkt);
 
     log_buf(LOG_WARN, "MARSHALED PKT", pkt, pkt_len);
