@@ -482,6 +482,7 @@ void *net_setup(void *args) {
                     if (request_handle(bc) == OK) {
                         should_reactivate = true;
                     } else {
+                        log_error("error when epoll in");
                         has_error = true;
                     }
                 }
@@ -489,6 +490,7 @@ void *net_setup(void *args) {
                     if (response_handle(bc) == OK) {
                         should_reactivate = true;
                     } else {
+                        log_error("error when epoll out");
                         has_error = true;
                     }
                 }
