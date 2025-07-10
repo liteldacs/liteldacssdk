@@ -322,7 +322,7 @@ static int read_packet(int fd, buffer_t *but) {
         CLONE_TO_CHUNK(*but, temp, len)
         return OK;
     } else {
-        // log_warn("%d", len);
+        log_warn("Read from socket size: %d", len);
         return ERROR;
     }
 }
