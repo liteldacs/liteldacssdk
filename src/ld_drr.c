@@ -114,12 +114,13 @@ l_err drr_resource_alloc(ld_drr_t *drr, size_t pkt_size, size_t W, size_t W_min,
             }
         }
 
+        // log_warn("!!!!!!!!!=================== %d", alloc_map[req_i->SAC]);
         if (alloc_map[req_i->SAC] == drr->req_szs[req_i->SAC]) req_i->DC = 0;
         else if (frag_data == TRUE) ld_rbuffer_push_front(drr->active_list, req_i);
         else ld_rbuffer_push_back(drr->active_list, req_i);
     }
     if (callback_func) {
-    callback_func(drr, alloc_map, cb_args);
+        callback_func(drr, alloc_map, cb_args);
     }
     free(alloc_map);
     return LD_OK;
