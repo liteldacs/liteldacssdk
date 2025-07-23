@@ -265,7 +265,7 @@ l_err log_init(int level, const char *log_dir, const char *role_str) {
 
     file_stream = open_memstream(&log_file, &f_sz);
     /* get current second with role as log name */
-    get_time(time_str, LD_TIME_UNDERLINE,LD_TIME_SEC);
+    get_time(time_str, LD_TIME_UNDERLINE,LD_TIME_MICRO);
     fprintf(file_stream, "%s/%s_%s.log", log_path, time_str, role_str);
     fclose(file_stream);
 

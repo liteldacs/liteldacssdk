@@ -54,7 +54,7 @@ typedef struct basic_conn_s {
     int fd; /* connection_s fd */
     struct epoll_event event; /* epoll event */
     struct sockaddr_storage saddr; /* IP socket address */
-    buffer_t read_pkt; /* Receive packet */
+    buffer_t *read_pkt; /* Receive packet */
     lfqueue_t *write_pkts;
     bool trans_done;
     const struct role_propt *rp;

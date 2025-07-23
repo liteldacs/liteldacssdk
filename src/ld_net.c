@@ -312,14 +312,63 @@ l_err defalut_send_pkt(basic_conn_t *bc, void *pkg, struct_desc_t *desc, l_err (
     return LD_OK;
 }
 
-static int read_packet(int fd, buffer_t *but) {
-    uint8_t temp[MAX_INPUT_BUFFER_SIZE];
-    ssize_t len;
+static int read_packet(int fd, basic_conn_t *bc) {
+    // // 先读取4字节的长度头
+    // uint32_t pkt_len;
+    // ssize_t len = read(fd, &pkt_len, sizeof(pkt_len));
+    // if (len != sizeof(pkt_len)) {
+    //     if (len < 0) log_warn("Read header error");
+    //     return len == 0 ? END : ERROR;
+    // }
+    // // 转换网络字节序到主机字节序
+    // pkt_len = ntohl(pkt_len);
+    //
+    // log_warn("!!!!!!!! PKT READ LEN:  %d", pkt_len);
+    //
+    // uint8_t temp[pkt_len];
+    // // buffer_t *buf = init_buffer_unptr();
+    // len = read(fd, temp, pkt_len);
+    //
+    // if (len == pkt_len) {
+    //     bc->read_pkt = init_buffer_unptr();
+    //     CLONE_TO_CHUNK(*bc->read_pkt, temp, len);
+    //     bc->opt->recv_handler(bc);
+    //     free_buffer(bc->read_pkt);
+    //     return OK;
+    // } else {
+    //     log_warn("Incomplete packet: %d/%u bytes", len, pkt_len);
+    //     return ERROR;
+    // }
 
-    len = read(fd, temp, sizeof(temp));
+    uint8_t temp[MAX_INPUT_BUFFER_SIZE] = {0};
+
+    ssize_t len = read(fd, temp, sizeof(temp));
+    // log_warn("!!!!! %d", len);
     if (len > 0) {
-        // log_warn("%d\n%s", len, temp);
-        CLONE_TO_CHUNK(*but, temp, len)
+        uint8_t *cur = temp;
+        while (TRUE) {
+            uint32_t pkt_len;
+            memcpy(&pkt_len, cur, sizeof(pkt_len));
+            cur += sizeof(pkt_len);
+            pkt_len = ntohl(pkt_len);
+            // log_warn("!!!!!! RECV LEN %d", pkt_len);
+            if (pkt_len > MAX_INPUT_BUFFER_SIZE)return ERROR;
+            if (pkt_len == 0) break;
+
+            log_buf(LOG_ERROR, "RECVV", cur, pkt_len);
+
+            bc->read_pkt = init_buffer_unptr();
+            CLONE_TO_CHUNK(*bc->read_pkt, cur, pkt_len);
+            cur += pkt_len;
+
+            if (bc->opt->recv_handler(bc) != LD_OK) {
+                log_error("Cannot handler received message");
+                return ERROR;
+            }
+            free_buffer(bc->read_pkt);
+        }
+
+        // CLONE_TO_CHUNK(bc->read_pkt, temp, len)
         return OK;
     } else {
         log_warn("Read from socket size: %d", len);
@@ -328,15 +377,6 @@ static int read_packet(int fd, buffer_t *but) {
 }
 
 
-int request_handle(basic_conn_t *bc) {
-    if (read_packet(bc->fd, &bc->read_pkt) == ERROR) return ERROR;
-    if (bc->opt->recv_handler) {
-        bc->opt->recv_handler(bc);
-    }
-
-    return OK;
-}
-
 /**
  * Return:
  * OK: all data sent
@@ -344,61 +384,61 @@ int request_handle(basic_conn_t *bc) {
  * ERROR: error
  */
 static int write_packet(basic_conn_t *bc) {
-    size_t len;
-    buffer_t *b;
 
     while (lfqueue_size(bc->write_pkts) != 0) {
+        buffer_t *b = NULL;
+        buffer_t *to_send = init_buffer_unptr();
         lfqueue_get(bc->write_pkts, (void **) &b);
         if (!b) return ERROR;
-        len = write(bc->fd, b->ptr, b->len);
+        size_t len = b->len;
+        // 添加4字节长度头
+        uint32_t pkt_len = htonl(len);
+
+        cat_to_buffer(to_send, (uint8_t *)&pkt_len, sizeof(pkt_len));
+        cat_to_buffer(to_send, b->ptr, len);
+
+        // log_warn("!!!!!!!! PKT LEN:  %d", len);
+        // log_warn("!!!!!!!! PKT SEND LEN:  %d", to_send->len);
+
+        //
+        // // 先发送长度头
+        // if (write(bc->fd, &pkt_len, sizeof(pkt_len)) != sizeof(pkt_len)) {
+        //     return ERROR;
+        // }
+        // 发送实际数据
+        size_t sent = 0;
+        while (sent < to_send->len) {
+            // ssize_t n = write(bc->fd, (char*)b->ptr + sent, len - sent);
+            ssize_t n = write(bc->fd, (char*)to_send->ptr + sent, to_send->len - sent);
+            if (n <= 0) {
+                return n == 0 ? OK : ERROR;
+            }
+            sent += n;
+        }
+
         free_buffer(b);
 
-        /* delay the next transmission */
-        // usleep(1000);
-
-        if (!len) {
-            return ERROR;
-        }
+        // len = write(bc->fd, b->ptr, b->len);
+        //
+        // /* delay the next transmission */
+        // // usleep(1000);
+        //
+        // if (!len) {
+        //     return ERROR;
+        // }
     }
     return OK;
-
-    // while (1) {
-    //     buffer_t *b = bc->partial_write_buf;
-    //
-    //     // 获取待发送数据
-    //     if (!b) {
-    //         if (lfqueue_get(bc->write_pkts, (void**)&b) != 0)
-    //             return OK; // 队列空
-    //         bc->partial_write_buf = b;
-    //         bc->write_offset = 0;
-    //     }
-    //
-    //     size_t total_len = b->len;
-    //     const uint8_t *send_ptr = b->ptr + bc->write_offset;
-    //     size_t remain_len = total_len - bc->write_offset;
-    //
-    //     // 非阻塞发送
-    //     ssize_t sent = write(bc->fd, send_ptr, remain_len);
-    //     if (sent < 0) {
-    //         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-    //             return AGAIN; // 需要等待下次EPOLLOUT
-    //         }
-    //         return ERROR; // 真实错误
-    //     }
-    //
-    //     // 更新发送位置
-    //     bc->write_offset += sent;
-    //
-    //     // 检查是否完成
-    //     if (bc->write_offset >= total_len) {
-    //         free_buffer(b);
-    //         bc->partial_write_buf = NULL;
-    //         bc->write_offset = 0;
-    //     } else {
-    //         return AGAIN; // 还有数据待发送
-    //     }
-    // }
 }
+
+int request_handle(basic_conn_t *bc) {
+    if (bc->opt->recv_handler) {
+        if (read_packet(bc->fd, bc) == ERROR) return ERROR;
+        // bc->opt->recv_handler(bc);
+    }
+
+    return OK;
+}
+
 
 static int response_send_buffer(basic_conn_t *bc) {
     int status = write_packet(bc);
@@ -495,11 +535,13 @@ void *net_setup(void *args) {
                     }
                 }
 
-                if (has_error) {
-                    connecion_set_expired(bc);
-                } else if (should_reactivate) {
+                // if (has_error) {
+                //     connecion_set_expired(bc);
+                // } else if (should_reactivate) {
+                //     connecion_set_reactivated(bc);
+                // }
+
                     connecion_set_reactivated(bc);
-                }
 
                 // if (curr_event->events & EPOLLIN) {
                 //     //recv
@@ -570,7 +612,7 @@ bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role) {
         set_fd_nonblocking(bc->fd);
         connection_set_nodelay(bc->fd);
 
-        zero(&bc->read_pkt);
+        // zero(&bc->read_pkt);
         bc->write_pkts = lfqueue_init();
 
         net_epoll_add(bc->opt->epoll_fd, bc, EPOLLIN | EPOLLET, &bc->event);
