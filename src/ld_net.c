@@ -313,50 +313,25 @@ l_err defalut_send_pkt(basic_conn_t *bc, void *pkg, struct_desc_t *desc, l_err (
 }
 
 static int read_packet(int fd, basic_conn_t *bc) {
-    // // 先读取4字节的长度头
-    // uint32_t pkt_len;
-    // ssize_t len = read(fd, &pkt_len, sizeof(pkt_len));
-    // if (len != sizeof(pkt_len)) {
-    //     if (len < 0) log_warn("Read header error");
-    //     return len == 0 ? END : ERROR;
-    // }
-    // // 转换网络字节序到主机字节序
-    // pkt_len = ntohl(pkt_len);
-    //
-    // log_warn("!!!!!!!! PKT READ LEN:  %d", pkt_len);
-    //
-    // uint8_t temp[pkt_len];
-    // // buffer_t *buf = init_buffer_unptr();
-    // len = read(fd, temp, pkt_len);
-    //
-    // if (len == pkt_len) {
-    //     bc->read_pkt = init_buffer_unptr();
-    //     CLONE_TO_CHUNK(*bc->read_pkt, temp, len);
-    //     bc->opt->recv_handler(bc);
-    //     free_buffer(bc->read_pkt);
-    //     return OK;
-    // } else {
-    //     log_warn("Incomplete packet: %d/%u bytes", len, pkt_len);
-    //     return ERROR;
-    // }
-
     uint8_t temp[MAX_INPUT_BUFFER_SIZE] = {0};
 
     ssize_t len = read(fd, temp, sizeof(temp));
-    // log_warn("!!!!! %d", len);
     if (len > 0) {
         uint8_t *cur = temp;
         while (TRUE) {
+            // 读取下一包的长度
             uint32_t pkt_len;
             memcpy(&pkt_len, cur, sizeof(pkt_len));
             cur += sizeof(pkt_len);
+
+            //转换格式
             pkt_len = ntohl(pkt_len);
-            // log_warn("!!!!!! RECV LEN %d", pkt_len);
             if (pkt_len > MAX_INPUT_BUFFER_SIZE)return ERROR;
             if (pkt_len == 0) break;
 
-            log_buf(LOG_ERROR, "RECVV", cur, pkt_len);
+            // log_buf(LOG_ERROR, "RECVV", cur, pkt_len);
 
+            // 读取包内容
             bc->read_pkt = init_buffer_unptr();
             CLONE_TO_CHUNK(*bc->read_pkt, cur, pkt_len);
             cur += pkt_len;
@@ -368,7 +343,6 @@ static int read_packet(int fd, basic_conn_t *bc) {
             free_buffer(bc->read_pkt);
         }
 
-        // CLONE_TO_CHUNK(bc->read_pkt, temp, len)
         return OK;
     } else {
         log_warn("Read from socket size: %d", len);
