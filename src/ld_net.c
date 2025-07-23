@@ -358,7 +358,6 @@ static int read_packet(int fd, basic_conn_t *bc) {
  * ERROR: error
  */
 static int write_packet(basic_conn_t *bc) {
-
     while (lfqueue_size(bc->write_pkts) != 0) {
         buffer_t *b = NULL;
         buffer_t *to_send = init_buffer_unptr();
@@ -371,15 +370,6 @@ static int write_packet(basic_conn_t *bc) {
         cat_to_buffer(to_send, (uint8_t *)&pkt_len, sizeof(pkt_len));
         cat_to_buffer(to_send, b->ptr, len);
 
-        // log_warn("!!!!!!!! PKT LEN:  %d", len);
-        // log_warn("!!!!!!!! PKT SEND LEN:  %d", to_send->len);
-
-        //
-        // // 先发送长度头
-        // if (write(bc->fd, &pkt_len, sizeof(pkt_len)) != sizeof(pkt_len)) {
-        //     return ERROR;
-        // }
-        // 发送实际数据
         size_t sent = 0;
         while (sent < to_send->len) {
             // ssize_t n = write(bc->fd, (char*)b->ptr + sent, len - sent);
@@ -391,15 +381,6 @@ static int write_packet(basic_conn_t *bc) {
         }
 
         free_buffer(b);
-
-        // len = write(bc->fd, b->ptr, b->len);
-        //
-        // /* delay the next transmission */
-        // // usleep(1000);
-        //
-        // if (!len) {
-        //     return ERROR;
-        // }
     }
     return OK;
 }
