@@ -125,7 +125,7 @@ static l_err update_gtimer_basetime(ld_gtimer_handler_t *ghandler, struct itimer
         return LD_ERR_INTERNAL;
     }
 
-    if (timerfd_settime(node->timer_fd, 0, spec, NULL) == -1) {
+    if (timerfd_settime(node->timer_fd, 1, spec, NULL) == -1) {
         perror("timerfd_settime");
         return LD_ERR_INTERNAL;
     }
@@ -133,10 +133,6 @@ static l_err update_gtimer_basetime(ld_gtimer_handler_t *ghandler, struct itimer
     node->event.events = EPOLLIN; // 监听可读事件
     node->event.data.fd = node->timer_fd;
 
-    // if (epoll_ctl(ghandler->epoll_fd, EPOLL_CTL_ADD, node->timer_fd, &node->event) == -1) {
-    //     perror("epoll_ctl_add");
-    //     return LD_ERR_INTERNAL;
-    // }
     gtimer_timerfd_add(ghandler);
     return LD_OK;
 }
@@ -200,7 +196,7 @@ l_err register_gtimer(ld_gtimer_t *gtimer) {
     pthread_create(&handler->th, NULL, start_gtimer, gtimer);
     pthread_detach(handler->th);
 
-    gtimer->is_reg == TRUE;
+    gtimer->is_reg = TRUE;
 
     return LD_OK;
 }
@@ -221,6 +217,8 @@ l_err reregister_gtimer(ld_gtimer_t *gtimer) {
     ld_gtimer_handler_t *handler = &gtimer->handler;
     if (handler->th == 0)   return LD_ERR_NULL;
     pthread_cancel(handler->th);
+    pthread_join(handler->th, NULL);
+    log_warn("================================================");
     if (gtimer_timerfd_del(handler) != LD_OK || update_gtimer_basetime(handler, &gtimer->spec) != LD_OK) {
         return LD_ERR_INTERNAL;
     }

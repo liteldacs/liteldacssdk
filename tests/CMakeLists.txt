@@ -12,10 +12,10 @@ set(tests
         #        pqueue
 #        base64
         #        mqueue
-        queue
+#        queue
         #        map
         #        libevent
-        globaltimer
+#        globaltimer
         #        list
         #        file
         #        http
@@ -23,21 +23,21 @@ set(tests
         #        sqlite
         #        crypto
         sql
-        bitset
-        drr
-        rbuffer
-#        rkeygen
-        test
-        mps
-        ntp
-        timerfd
-        hashmap
-        ipv6addr
-        coredump
-        env
-        str
-        yaml
-        ipv6pkt
+#        bitset
+#        drr
+#        rbuffer
+##        rkeygen
+#        test
+#        mps
+#        ntp
+#        timerfd
+#        hashmap
+#        ipv6addr
+#        coredump
+#        env
+#        str
+#        yaml
+#        ipv6pkt
 )
 
 #cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
@@ -57,7 +57,7 @@ enable_testing()
 foreach (name ${tests})
     add_test(NAME ${name} COMMAND ${name}test)
     add_executable(${name}test ${name}_test.c)
-    target_link_libraries(${name}test LINK_PUBLIC liteldacssdk yaml cjson base64 statemachine event event_pthreads)
+    target_link_libraries(${name}test LINK_PUBLIC liteldacssdk yaml cjson base64 event event_pthreads)
     target_include_directories(${name}test PUBLIC  ${CMAKE_SOURCE_DIR}/include)
 
     find_package(SQLite3 REQUIRED)

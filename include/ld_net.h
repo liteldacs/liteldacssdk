@@ -34,6 +34,7 @@ typedef struct net_ctx_s {
     int server_fd; //for GSW
     int timeout;
     heap_desc_t hd_conns;
+    void *arg;
 
     void (*close_handler)(basic_conn_t *);
 
@@ -65,7 +66,6 @@ typedef struct basic_conn_s {
     int remote_port;
     int local_port;
 
-
     // buffer_t *partial_write_buf;  // 部分发送的buffer
     // size_t write_offset;          // 已发送字节数
 } basic_conn_t;
@@ -93,5 +93,7 @@ int net_epoll_add(int e_fd, basic_conn_t *conn_opt, uint32_t events, struct epol
 void net_epoll_out(int e_fd, basic_conn_t *bc);
 
 void net_epoll_in(int e_fd, basic_conn_t *bc);
+
+uint16_t get_port(basic_conn_t *bc);
 
 #endif //TEST_CLIENT_CLIENT_H

@@ -651,3 +651,8 @@ void server_connection_prune(net_ctx_t *opt) {
             break;
     }
 }
+
+
+uint16_t get_port(basic_conn_t *bc) {
+    return ntohs(((struct sockaddr_in *) &bc->saddr)->sin_port);
+}
