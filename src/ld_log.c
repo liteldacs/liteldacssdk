@@ -170,22 +170,20 @@ static void init_event(log_Event *ev, void *udata) {
     ev->udata = udata;
 }
 
-
-void log_log(int level, const char *file, int line, const char *fmt, ...) {
+void log_va(int level, const char *file, int line, const char *fmt, va_list *va) {
     log_Event ev = {
         .fmt = fmt,
         .file = file,
         .line = line,
         .level = level,
     };
+    va_copy(ev.ap, *va);
 
     lock();
 
     if (!L.quiet && level >= L.level) {
         init_event(&ev, stderr);
-        va_start(ev.ap, fmt);
         stdout_callback(&ev);
-        va_end(ev.ap);
     }
 
 
@@ -193,13 +191,48 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
         Callback *cb = &L.callbacks[i];
         if (level >= cb->level) {
             init_event(&ev, cb->udata);
-            va_start(ev.ap, fmt);
             cb->fn(&ev);
-            va_end(ev.ap);
         }
     }
 
     unlock();
+}
+
+void log_log(int level, const char *file, int line, const char *fmt, ...) {
+
+    // log_Event ev = {
+    //     .fmt = fmt,
+    //     .file = file,
+    //     .line = line,
+    //     .level = level,
+    // };
+    //
+    // lock();
+    //
+    // if (!L.quiet && level >= L.level) {
+    //     init_event(&ev, stderr);
+    //     va_start(ev.ap, fmt);
+    //     stdout_callback(&ev);
+    //     va_end(ev.ap);
+    // }
+    //
+    //
+    // for (int i = 0; i < MAX_CALLBACKS && L.callbacks[i].fn; i++) {
+    //     Callback *cb = &L.callbacks[i];
+    //     if (level >= cb->level) {
+    //         init_event(&ev, cb->udata);
+    //         va_start(ev.ap, fmt);
+    //         cb->fn(&ev);
+    //         va_end(ev.ap);
+    //     }
+    // }
+    //
+    // unlock();
+
+    va_list args;
+    va_start(args, fmt);
+    log_va(level, file, line, fmt, &args);
+    va_end(args);
 }
 
 

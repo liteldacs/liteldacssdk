@@ -17,7 +17,7 @@ static void get_current_time(char *time_str) {
 
 static l_err open_database(sqlite_entity_t *obj) {
     if (sqlite3_open(obj->db_path, &obj->db)) {
-        fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(obj->db));
+        log_error("Can't open database: %s\n", sqlite3_errmsg(obj->db));
         return LD_ERR_OPEN_SQL;
     }
     return LD_OK;

@@ -82,6 +82,8 @@ int log_add_fp(FILE *fp, int level);
 
 void log_log(int level, const char *file, int line, const char *fmt, ...);
 
+void log_va(int level, const char *file, int line, const char *fmt, va_list *va);
+
 void log_print_buffer(int level, const char *file, int line, const char *msg_head, const uint8_t *buf, size_t len);
 
 l_err log_init(int level, const char *log_dir, const char *role_str);
