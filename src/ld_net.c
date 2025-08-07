@@ -381,6 +381,7 @@ static int write_packet(basic_conn_t *bc) {
         }
 
         free_buffer(b);
+        free_buffer(to_send);
     }
     return OK;
 }
@@ -461,6 +462,7 @@ void *net_setup(void *args) {
             if (fd == net_ctx->server_fd) {
                 // gs_conn_accept(net_opt); /* never happened in GS */
                 net_ctx->accept_handler(net_ctx);
+                // free(curr_event->data.ptr);
             } else {
                 basic_conn_t *bc = curr_event->data.ptr;
                 int status;
@@ -490,13 +492,12 @@ void *net_setup(void *args) {
                     }
                 }
 
-                // if (has_error) {
-                //     connecion_set_expired(bc);
-                // } else if (should_reactivate) {
-                //     connecion_set_reactivated(bc);
-                // }
-
+                if (has_error) {
+                    connecion_set_expired(bc);
+                } else if (should_reactivate) {
                     connecion_set_reactivated(bc);
+                }
+                // connecion_set_reactivated(bc);
 
                 // if (curr_event->events & EPOLLIN) {
                 //     //recv
