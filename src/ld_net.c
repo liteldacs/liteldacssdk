@@ -263,12 +263,16 @@ static int add_listen_fd(int epoll_fd, int server_fd) {
 }
 
 void server_entity_setup(uint16_t port, net_ctx_t *opt, int s_r) {
+
     const struct role_propt *rp = get_role_propt(s_r);
 
     opt->server_fd = rp->server_make(port);
 
     ABORT_ON(opt->accept_handler == NULL, "Accept handler is NULL");
-    ABORT_ON(opt->server_fd == ERROR, "make_server");
+    if (opt->server_fd == ERROR) {
+        log_error("Failed make server: %d", port);
+        ABORT_ON(opt->server_fd == ERROR, "make_server");
+    }
     ABORT_ON(add_listen_fd(opt->epoll_fd, opt->server_fd) == ERROR, "add_listen_fd");
 
     log_info("Server has started successfully.");

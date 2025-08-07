@@ -28,6 +28,8 @@ struct role_propt {
 };
 
 
+typedef l_err (*recv_handler)(basic_conn_t *);
+
 typedef struct net_ctx_s {
     char name[32];
     int epoll_fd;
@@ -40,7 +42,8 @@ typedef struct net_ctx_s {
 
     bool (*reset_conn)(basic_conn_t *);
 
-    l_err (*recv_handler)(basic_conn_t *);
+    // l_err (*recv_handler)(basic_conn_t *);
+    recv_handler recv_handler;
 
     // l_err (*send_handler)(basic_conn_t *, buffer_t *);
     l_err (*send_handler)(basic_conn_t *conn, void *pkg, struct_desc_t *desc, l_err (*mid_func)(buffer_t *, void *),
