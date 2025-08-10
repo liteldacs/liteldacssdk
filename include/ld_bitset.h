@@ -41,6 +41,8 @@ int bs_get_highest(ld_bitset_t *set);
 
 int bs_get_lowest(ld_bitset_t *set);
 
+int bs_get_lowest_unalloced(ld_bitset_t *set);
+
 l_err bit_rightshift(uint8_t *src, size_t src_len, uint8_t *dst, size_t to_shift);
 
 

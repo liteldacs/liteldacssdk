@@ -15,11 +15,17 @@ ld_bitset_t *init_bitset(const size_t res_num, const size_t res_sz, init_resourc
     bitset->bitset = calloc(BITSET_SIZE(res_num), sizeof(uint8_t));
     bitset->free_func = free_func;
 
-    if (init_func == NULL || free_func == NULL || init_func(bitset) != LD_OK) {
+    if (init_func && init_func(bitset) != LD_OK) {
         free(bitset->bitset);
         free(bitset);
         return NULL;
     }
+
+    // if (init_func == NULL || free_func == NULL || init_func(bitset) != LD_OK) {
+    //     free(bitset->bitset);
+    //     free(bitset);
+    //     return NULL;
+    // }
 
     return bitset;
 }
@@ -28,7 +34,9 @@ void free_bitset(void *v) {
     ld_bitset_t *bitset = v;
     if (bitset) {
         free(bitset->bitset);
-        bitset->free_func(bitset->resources);
+        if (bitset->free_func) {
+            bitset->free_func(bitset->resources);
+        }
         free(bitset);
     }
 }
@@ -39,6 +47,7 @@ l_err bs_record_by_index(ld_bitset_t *set, uint64_t i) {
 }
 
 l_err bs_alloc_resource(ld_bitset_t *set, void **res) {
+    if (!set->resources) return LD_ERR_NULL;
     for (int i = 0; i < set->res_num; i++) {
         if ((set->bitset[i / 8] & (1 << (i % 8))) == 0) {
             set->bitset[i / 8] |= (1 << (i % 8));
@@ -110,13 +119,25 @@ int bs_get_highest(ld_bitset_t *set) {
 }
 
 int bs_get_lowest(ld_bitset_t *set) {
-    int lowest = -1;
+    // int lowest = -1;
     for (int i = 0; i < set->res_num; i++) {
         if ((set->bitset[i / 8] & (1 << (i % 8))) != 0) {
-            lowest = i;
+            // lowest = i;
+            return i;
         }
     }
-    return lowest;
+    return -1;
+}
+
+int bs_get_lowest_unalloced(ld_bitset_t *set) {
+    // int lowest = -1;
+    for (int i = 0; i < set->res_num; i++) {
+        if ((set->bitset[i / 8] & (1 << (i % 8))) == 0) {
+            // lowest = i;
+            return i;
+        }
+    }
+    return -1;
 }
 
 static void switch_endian(const uint8_t *src, size_t src_len, uint8_t *dst) {

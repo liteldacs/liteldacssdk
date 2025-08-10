@@ -340,9 +340,13 @@ static int read_packet(int fd, basic_conn_t *bc) {
             CLONE_TO_CHUNK(*bc->read_pkt, cur, pkt_len);
             cur += pkt_len;
 
-            if (bc->opt->recv_handler(bc) != LD_OK) {
-                log_error("Cannot handler received message");
-                return ERROR;
+            if (bc->opt->recv_handler) {
+                if (bc->opt->recv_handler(bc) == LD_ERR_INTERNAL) {
+                    log_error("Cannot handler received message");
+                    return ERROR;
+                }
+            }else {
+                log_error("No recv handler");
             }
             free_buffer(bc->read_pkt);
         }
