@@ -288,27 +288,14 @@ int server_shutdown(int server_fd) {
     return close(server_fd);
 }
 
-
-l_err defalut_send_pkt(basic_conn_t *bc, void *pkg, struct_desc_t *desc, l_err (*mid_func)(buffer_t *, void *),
+l_err defalut_send_pkt(basic_conn_t *bc, buffer_t *in_buf, l_err (*mid_func)(buffer_t *, void *),
                  void *args) {
-    if (bc == NULL) return LD_ERR_INTERNAL;
-    pb_stream pbs;
-    uint8_t raw[2048] = {0};
-
-
-    init_pbs(&pbs, raw, 2048, "Send BUF");
-    if (!out_struct(pkg, desc, &pbs, NULL)) {
-        log_error("Cannot generate sending message!");
-        return LD_ERR_INTERNAL;
-    }
-
-    close_output_pbs(&pbs);
 
     buffer_t *buf = init_buffer_unptr();
     if (mid_func) {
         mid_func(buf, args);
     }
-    cat_to_buffer(buf, pbs.start, pbs_offset(&pbs));
+    cat_to_buffer(buf, in_buf->ptr, in_buf->len);
     log_buf(LOG_INFO, "Send OUT", buf->ptr, buf->len);
 
     lfqueue_put(bc->write_pkts, buf);

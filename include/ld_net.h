@@ -17,7 +17,7 @@
 #define IPV6_ADDRLEN 128
 #define GEN_ADDRLEN 128
 typedef struct basic_conn_s basic_conn_t;
-# define DEFAULT_FD -1
+# define DEFAULT_FD (-1)
 
 struct role_propt {
     sock_roles s_r;
@@ -45,8 +45,7 @@ typedef struct net_ctx_s {
     // l_err (*recv_handler)(basic_conn_t *);
     recv_handler recv_handler;
 
-    // l_err (*send_handler)(basic_conn_t *, buffer_t *);
-    l_err (*send_handler)(basic_conn_t *conn, void *pkg, struct_desc_t *desc, l_err (*mid_func)(buffer_t *, void *),
+    l_err (*send_handler)(basic_conn_t *conn, buffer_t *buf, l_err (*mid_func)(buffer_t *, void *),
                      void *args);
 
     void *(*conn_handler)(struct net_ctx_s *ctx, char *remote_addr, int remote_port, int local_port);
@@ -81,8 +80,7 @@ void server_entity_setup(uint16_t port, net_ctx_t *opt, int s_r);
 
 void *client_entity_setup(net_ctx_t *opt, char *remote_addr, int remote_port, int local_port);
 
-
-l_err defalut_send_pkt(basic_conn_t *bc, void *pkg, struct_desc_t *desc, l_err (*mid_func)(buffer_t *, void *),
+l_err defalut_send_pkt(basic_conn_t *bc, buffer_t *in_buf, l_err (*mid_func)(buffer_t *, void *),
                  void *args);
 
 extern int request_handle(basic_conn_t *bc);
