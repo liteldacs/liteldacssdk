@@ -309,23 +309,41 @@ static int read_packet(int fd, basic_conn_t *bc) {
     ssize_t len = read(fd, temp, sizeof(temp));
     if (len > 0) {
         uint8_t *cur = temp;
-        while (TRUE) {
+        size_t remaining = len;
+        while (remaining > 0) {
+            // 检查是否至少有4个字节来读取长度
+            if (remaining < sizeof(uint32_t)) {
+                log_error("Incomplete packet header");
+                return ERROR;
+            }
+
             // 读取下一包的长度
             uint32_t pkt_len;
             memcpy(&pkt_len, cur, sizeof(pkt_len));
-            cur += sizeof(pkt_len);
 
             //转换格式
             pkt_len = ntohl(pkt_len);
-            if (pkt_len > MAX_INPUT_BUFFER_SIZE)return ERROR;
-            if (pkt_len == 0) break;
+            if (pkt_len > MAX_INPUT_BUFFER_SIZE) {
+                log_error("Packet too large: %u", pkt_len);
+                return ERROR;
+            }
 
-            // log_buf(LOG_ERROR, "RECVV", cur, pkt_len);
+            // 检查是否有足够的数据
+            if (remaining < sizeof(uint32_t) + pkt_len) {
+                log_error("Incomplete packet data");
+                return ERROR;
+            }
+
+            cur += sizeof(pkt_len);
+            remaining -= sizeof(uint32_t);
+
+            if (pkt_len == 0) break;
 
             // 读取包内容
             bc->read_pkt = init_buffer_unptr();
             CLONE_TO_CHUNK(*bc->read_pkt, cur, pkt_len);
             cur += pkt_len;
+            remaining -= pkt_len;
 
             if (bc->opt->recv_handler) {
                 if (bc->opt->recv_handler(bc) == LD_ERR_INTERNAL) {
@@ -339,8 +357,17 @@ static int read_packet(int fd, basic_conn_t *bc) {
         }
 
         return OK;
+    } else if (len == 0) {
+        // 连接正常关闭
+        log_info("Connection closed by peer, port: %d", get_port(bc));
+        return ERROR;
     } else {
-        log_warn("Read from socket size: %d", len);
+        // 读取错误
+        if (errno == EAGAIN ) {
+            // 暂时没有数据可读
+            return OK;
+        }
+        log_warn("Read from port %d, error: %s", get_port(bc), strerror(errno));
         return ERROR;
     }
 }
@@ -370,6 +397,11 @@ static int write_packet(basic_conn_t *bc) {
             // ssize_t n = write(bc->fd, (char*)b->ptr + sent, len - sent);
             ssize_t n = write(bc->fd, (char*)to_send->ptr + sent, to_send->len - sent);
             if (n <= 0) {
+                if (n < 0 && errno == EAGAIN) {
+                    // 对于非阻塞套接字，EAGAIN表示暂时无法发送更多数据
+                    // 应该保存剩余数据并稍后重试
+                    return AGAIN;
+                }
                 return n == 0 ? OK : ERROR;
             }
             sent += n;
@@ -637,14 +669,19 @@ void connection_close(basic_conn_t *bc) {
 }
 
 void server_connection_prune(net_ctx_t *opt) {
-    while (opt->hd_conns.heap_size > 0 && opt->timeout) {
+    time_t current_time = time(NULL);
+    int pruned_count = 0;
+    // 限制每次调用最多清理的连接数，避免长时间占用CPU
+    while (opt->hd_conns.heap_size > 0 && opt->timeout && pruned_count < 100) {
         basic_conn_t *bc = opt->hd_conns.hps[0]->obj;
         int64_t active_time = opt->hd_conns.hps[0]->factor;
-        if (time(NULL) - active_time >= opt->timeout) {
+        if (current_time - active_time >= opt->timeout) {
             log_info("prune %p %d\n", bc, opt->hd_conns.heap_size);
             connection_close(bc);
-        } else
+            pruned_count++;
+        } else {
             break;
+        }
     }
 }
 
