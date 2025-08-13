@@ -120,42 +120,80 @@ static inline void *_lfqueue_malloc(void *pl, size_t sz) {
 static inline void _lfqueue_free(void *pl, void *ptr) {
     free(ptr);
 }
-
-static void *
-_dequeue(lfqueue_t *lfqueue) {
-    lfqueue_cas_node_t *head, *next;
-    void *val;
-
+static void* _dequeue(lfqueue_t *lfqueue) {
     for (;;) {
-        head = lfqueue->head;
-        if (__LFQ_BOOL_COMPARE_AND_SWAP(&lfqueue->head, head, head)) {
-            next = head->next;
-            if (__LFQ_BOOL_COMPARE_AND_SWAP(&lfqueue->tail, head, head)) {
-                if (next == NULL) {
-                    val = NULL;
-                    goto _done;
-                }
-            } else {
-                if (next) {
-                    val = next->value;
-                    if (__LFQ_BOOL_COMPARE_AND_SWAP(&lfqueue->head, head, next)) {
-                        break;
-                    }
-                } else {
-                    val = NULL;
-                    goto _done;
-                }
-            }
-        }
-    }
+        lfqueue_cas_node_t *head = lfqueue->head;
+        lfqueue_cas_node_t *tail = lfqueue->tail;
+        lfqueue_cas_node_t *next = head->next;
 
-    __lfq_recycle_free(lfqueue, head);
-_done:
-    // __asm volatile("" ::: "memory");
-    __LFQ_SYNC_MEMORY();
-    __lfq_check_free(lfqueue);
-    return val;
+        // 如果 head 被其他线程修改，重试
+        if (head != lfqueue->head) {
+            continue;
+        }
+
+        // 如果 head == tail，队列为空或正在调整
+        if (head == tail) {
+            if (next == NULL) {
+                // 真空，返回 NULL
+                return NULL;
+            }
+            // tail 滞后，帮助推进 tail
+            __LFQ_BOOL_COMPARE_AND_SWAP(&lfqueue->tail, tail, next);
+            continue;
+        }
+
+        // 正常出队：取 next 的值，尝试移动 head
+        if (__LFQ_BOOL_COMPARE_AND_SWAP(&lfqueue->head, head, next)) {
+            void *val = next->value;
+
+            // 可选：帮助推进 tail（可选优化）
+            // __LFQ_BOOL_COMPARE_AND_SWAP(&lfqueue->tail, tail, next);
+
+            // 延迟释放 head 节点
+            __lfq_recycle_free(lfqueue, head);
+
+            __LFQ_SYNC_MEMORY();
+            __lfq_check_free(lfqueue);
+            return val;
+        }
+        // CAS 失败，重试
+    }
 }
+// static void *
+// _dequeue(lfqueue_t *lfqueue) {
+//     lfqueue_cas_node_t *head, *next;
+//     void *val;
+//
+//     for (;;) {
+//         head = lfqueue->head;
+//         if (__LFQ_BOOL_COMPARE_AND_SWAP(&lfqueue->head, head, head)) {
+//             next = head->next;
+//             if (__LFQ_BOOL_COMPARE_AND_SWAP(&lfqueue->tail, head, head)) {
+//                 if (next == NULL) {
+//                     val = NULL;
+//                     goto _done;
+//                 }
+//             } else {
+//                 if (next) {
+//                     val = next->value;
+//                     if (__LFQ_BOOL_COMPARE_AND_SWAP(&lfqueue->head, head, next)) {
+//                         break;
+//                     }
+//                 } else {
+//                     val = NULL;
+//                     goto _done;
+//                 }
+//             }
+//         }
+//     }
+//
+//     __lfq_recycle_free(lfqueue, head);
+// _done:
+//     // __asm volatile("" ::: "memory");
+//     __LFQ_SYNC_MEMORY();
+//     __lfq_check_free(lfqueue);
+//     return val;
+// }
 
 static void *
 _single_dequeue(lfqueue_t *lfqueue) {

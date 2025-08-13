@@ -8,10 +8,11 @@
 #include <netinet/tcp.h>
 #include <ld_heap.h>
 #include <ld_buffer.h>
-#include <ld_mqueue.h>
 #include <ld_epoll.h>
 #include <passert.h>
 #include <ld_santilizer.h>
+
+#include "ld_aqueue.h"
 
 
 #define IPV6_ADDRLEN 128
@@ -58,7 +59,8 @@ typedef struct basic_conn_s {
     struct epoll_event event; /* epoll event */
     struct sockaddr_storage saddr; /* IP socket address */
     buffer_t *read_pkt; /* Receive packet */
-    lfqueue_t *write_pkts;
+    // lfqueue_t *write_pkts;
+    ld_aqueue_t *write_pkts;
     bool trans_done;
     const struct role_propt *rp;
     struct net_ctx_s *opt;
@@ -68,8 +70,8 @@ typedef struct basic_conn_s {
     int remote_port;
     int local_port;
 
-    // buffer_t *partial_write_buf;  // 部分发送的buffer
-    // size_t write_offset;          // 已发送字节数
+    buffer_t *current_write_buffer;  // 当前正在发送的 buffer
+    size_t current_write_offset;     // 已经发送了多少字节（在 to_send 中）
 } basic_conn_t;
 
 bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role);

@@ -4,6 +4,7 @@ project(ldacs_test C)
 set(CMAKE_C_STANDARD 11)
 set(tests
         json
+        aqueue
         #        stateMachine
 #        multitimer
         #        crc

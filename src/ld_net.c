@@ -57,6 +57,7 @@ static int make_std_tcp_connect(struct sockaddr_in *to_conn_addr, char *addr, in
 
         if (bind(fd, (struct sockaddr *) &local_addr, sizeof(local_addr)) == -1) {
             perror("bind failed");
+            log_error("Bind Failed %d", local_port);
             close(fd);
             return -1;
         }
@@ -112,6 +113,7 @@ static int make_std_tcpv6_connect(struct sockaddr_in6 *to_conn_addr, char *addr,
 
         if (bind(fd, (struct sockaddr *) &local_addr, sizeof(local_addr)) == -1) {
             perror("bind failed");
+            log_error("Bind Failed %d", local_port);
             close(fd);
             return -1;
         }
@@ -211,7 +213,6 @@ static int make_std_tcpv6_accept(basic_conn_t *bc) {
     socklen_t saddrlen = sizeof(struct sockaddr_in6);
     if (bc->opt->server_fd == DEFAULT_FD) return DEFAULT_FD;
     while ((fd = accept(bc->opt->server_fd, (struct sockaddr *) to_conn_addr, &saddrlen)) == ERROR) {
-
     }
 
     return fd;
@@ -232,7 +233,6 @@ static int init_std_tcp_accept_handler(basic_conn_t *bc) {
 static int init_std_tcpv6_accept_handler(basic_conn_t *bc) {
     return make_std_tcpv6_accept(bc);
 }
-
 
 
 const struct role_propt role_propts[] = {
@@ -263,7 +263,6 @@ static int add_listen_fd(int epoll_fd, int server_fd) {
 }
 
 void server_entity_setup(uint16_t port, net_ctx_t *opt, int s_r) {
-
     const struct role_propt *rp = get_role_propt(s_r);
 
     opt->server_fd = rp->server_make(port);
@@ -289,8 +288,7 @@ int server_shutdown(int server_fd) {
 }
 
 l_err defalut_send_pkt(basic_conn_t *bc, buffer_t *in_buf, l_err (*mid_func)(buffer_t *, void *),
-                 void *args) {
-
+                       void *args) {
     buffer_t *buf = init_buffer_unptr();
     if (mid_func) {
         mid_func(buf, args);
@@ -298,7 +296,8 @@ l_err defalut_send_pkt(basic_conn_t *bc, buffer_t *in_buf, l_err (*mid_func)(buf
     cat_to_buffer(buf, in_buf->ptr, in_buf->len);
     // log_buf(LOG_INFO, "Send OUT", buf->ptr, buf->len);
 
-    lfqueue_put(bc->write_pkts, buf);
+    // lfqueue_put(bc->write_pkts, buf);
+    ld_aqueue_enqueue(bc->write_pkts, buf);
     net_epoll_out(bc->opt->epoll_fd, bc);
     return LD_OK;
 }
@@ -306,70 +305,78 @@ l_err defalut_send_pkt(basic_conn_t *bc, buffer_t *in_buf, l_err (*mid_func)(buf
 static int read_packet(int fd, basic_conn_t *bc) {
     uint8_t temp[MAX_INPUT_BUFFER_SIZE] = {0};
 
-    ssize_t len = read(fd, temp, sizeof(temp));
-    if (len > 0) {
-        uint8_t *cur = temp;
-        size_t remaining = len;
-        while (remaining > 0) {
-            // 检查是否至少有4个字节来读取长度
-            if (remaining < sizeof(uint32_t)) {
-                log_error("Incomplete packet header");
-                return ERROR;
-            }
-
-            // 读取下一包的长度
-            uint32_t pkt_len;
-            memcpy(&pkt_len, cur, sizeof(pkt_len));
-
-            //转换格式
-            pkt_len = ntohl(pkt_len);
-            if (pkt_len > MAX_INPUT_BUFFER_SIZE) {
-                log_error("Packet too large: %u", pkt_len);
-                return ERROR;
-            }
-
-            // 检查是否有足够的数据
-            if (remaining < sizeof(uint32_t) + pkt_len) {
-                log_error("Incomplete packet data");
-                return ERROR;
-            }
-
-            cur += sizeof(pkt_len);
-            remaining -= sizeof(uint32_t);
-
-            if (pkt_len == 0) break;
-
-            // 读取包内容
-            bc->read_pkt = init_buffer_unptr();
-            CLONE_TO_CHUNK(*bc->read_pkt, cur, pkt_len);
-            cur += pkt_len;
-            remaining -= pkt_len;
-
-            if (bc->opt->recv_handler) {
-                if (bc->opt->recv_handler(bc) == LD_ERR_INTERNAL) {
-                    log_error("Cannot handler received message");
+        ssize_t len = read(fd, temp, sizeof(temp));
+        fprintf(stderr, "len: %03ld   => ", len);
+        for (int i = 0; i < len; i++) {
+            fprintf(stderr, "%02x ", temp[i]);
+        }
+        fprintf(stderr, "\n");
+        if (len > 0) {
+            uint8_t *cur = temp;
+            size_t remaining = len;
+            while (remaining > 0) {
+                // 检查是否至少有4个字节来读取长度
+                if (remaining < sizeof(uint32_t)) {
+                    log_error("Incomplete packet header");
                     return ERROR;
                 }
-            }else {
-                log_error("No recv handler");
-            }
-            free_buffer(bc->read_pkt);
-        }
 
-        return OK;
-    } else if (len == 0) {
-        // 连接正常关闭
-        log_info("Connection closed by peer, port: %d", get_port(bc));
-        return ERROR;
-    } else {
-        // 读取错误
-        if (errno == EAGAIN ) {
-            // 暂时没有数据可读
+                // 读取下一包的长度
+                uint32_t pkt_len;
+                memcpy(&pkt_len, cur, sizeof(pkt_len));
+
+                //转换格式
+                pkt_len = ntohl(pkt_len);
+                if (pkt_len == 0) break;
+                if (pkt_len > MAX_INPUT_BUFFER_SIZE) {
+                    log_error("Packet too large: %u", pkt_len);
+                    return ERROR;
+                }
+
+                // 检查是否有足够的数据
+                if (remaining < sizeof(uint32_t) + pkt_len) {
+                    log_error("Incomplete packet data");
+                    return ERROR;
+                }
+
+                cur += sizeof(uint32_t);
+                remaining -= sizeof(uint32_t);
+
+
+                // 读取包内容
+                bc->read_pkt = init_buffer_unptr();
+                CLONE_TO_CHUNK(*bc->read_pkt, cur, pkt_len);
+
+                if (bc->opt->recv_handler) {
+                    if (bc->opt->recv_handler(bc) == LD_ERR_INTERNAL) {
+                        log_error("Cannot handler received message");
+                        return ERROR;
+                    }
+                } else {
+                    log_error("No recv handler");
+                }
+                free_buffer(bc->read_pkt);
+                cur += pkt_len;
+                remaining -= pkt_len;
+
+                if (remaining == 0) break;
+            }
+
             return OK;
+        } else if (len == 0) {
+            // 连接正常关闭
+            log_info("Connection closed by peer, port: %d", get_port(bc));
+            return ERROR;
+        } else {
+            perror("read failed: ");
+            // 读取错误
+            if (errno == EAGAIN) {
+                // 暂时没有数据可读
+                return OK;
+            }
+            log_warn("Read from port %d, error: %s", get_port(bc), strerror(errno));
+            return ERROR;
         }
-        log_warn("Read from port %d, error: %s", get_port(bc), strerror(errno));
-        return ERROR;
-    }
 }
 
 
@@ -380,34 +387,43 @@ static int read_packet(int fd, basic_conn_t *bc) {
  * ERROR: error
  */
 static int write_packet(basic_conn_t *bc) {
-    while (lfqueue_size(bc->write_pkts) != 0) {
-        buffer_t *b = NULL;
+    // while (lfqueue_size(bc->write_pkts) != 0) {
+    while (ld_aqueue_count(bc->write_pkts) > 0) {
         buffer_t *to_send = init_buffer_unptr();
-        lfqueue_get(bc->write_pkts, (void **) &b);
-        if (!b) return ERROR;
+        // buffer_t *b = NULL;
+        // lfqueue_get(bc->write_pkts, (void **) &b);
+        // lfqueue_get_wait(bc->write_pkts, (void **) &b);
+        buffer_t *b = ld_aqueue_dequeue(bc->write_pkts);
+        if (!b) {
+            log_error("Send buffer null: %d %p", ld_aqueue_count(bc->write_pkts), bc->write_pkts);
+            continue;
+            // return ERROR;
+        }
         size_t len = b->len;
         // 添加4字节长度头
         uint32_t pkt_len = htonl(len);
 
-        cat_to_buffer(to_send, (uint8_t *)&pkt_len, sizeof(pkt_len));
+        cat_to_buffer(to_send, (uint8_t *) &pkt_len, sizeof(pkt_len));
         cat_to_buffer(to_send, b->ptr, len);
 
         size_t sent = 0;
         while (sent < to_send->len) {
             // ssize_t n = write(bc->fd, (char*)b->ptr + sent, len - sent);
-            ssize_t n = write(bc->fd, (char*)to_send->ptr + sent, to_send->len - sent);
+            ssize_t n = write(bc->fd, (char *) to_send->ptr + sent, to_send->len - sent);
             if (n <= 0) {
-                if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                if (n < 0 && errno == EAGAIN) {
                     // 对于非阻塞套接字，EAGAIN表示暂时无法发送更多数据
                     // 应该保存剩余数据并稍后重试
-                    // 将未完成的数据重新放回队列头部，以便下次继续发送
-                    lfqueue_put(bc->write_pkts, b);
-                    free_buffer(to_send);
+                    log_warn("ERROR");
                     return AGAIN;
                 }
-                free_buffer(b);
-                free_buffer(to_send);
-                return n == 0 ? OK : ERROR;
+                // return n == 0 ? OK : ERROR;
+                if (n == 0) {
+                    return OK;
+                } else {
+                    log_warn("ERROR");
+                    return ERROR;
+                }
             }
             sent += n;
         }
@@ -445,7 +461,6 @@ static int response_send_buffer(basic_conn_t *bc) {
 
         case AGAIN:
             // 保持EPOLLOUT等待剩余数据
-            epoll_enable_out(bc->opt->epoll_fd, &bc->event, bc->fd);
             break;
 
         case ERROR:
@@ -471,10 +486,6 @@ int response_handle(basic_conn_t *bc) {
         // response done
         if (bc->opt->reset_conn) bc->opt->reset_conn(bc);
         net_epoll_in(bc->opt->epoll_fd, bc);
-    }
-    else {
-        // 还有数据需要发送，继续保持EPOLLOUT事件
-        net_epoll_out(bc->opt->epoll_fd, bc);
     }
     return status;
 }
@@ -531,6 +542,7 @@ void *net_setup(void *args) {
 
                 if (has_error) {
                     connecion_set_expired(bc);
+                    net_epoll_in(bc->opt->epoll_fd, bc); // 确保恢复到IN状态
                 } else if (should_reactivate) {
                     connecion_set_reactivated(bc);
                 }
@@ -565,14 +577,36 @@ int net_epoll_add(int e_fd, basic_conn_t *bc, uint32_t events,
     return core_epoll_add(e_fd, bc->fd, pev);
 }
 
+// void net_epoll_out(int e_fd, basic_conn_t *bc) {
+//     epoll_disable_in(e_fd, &bc->event, bc->fd);
+//     epoll_enable_out(e_fd, &bc->event, bc->fd);
+// }
+//
+// void net_epoll_in(int e_fd, basic_conn_t *bc) {
+//     epoll_disable_out(e_fd, &bc->event, bc->fd);
+//     epoll_enable_in(e_fd, &bc->event, bc->fd);
+// }
+
 void net_epoll_out(int e_fd, basic_conn_t *bc) {
-    epoll_disable_in(e_fd, &bc->event, bc->fd);
-    epoll_enable_out(e_fd, &bc->event, bc->fd);
+    struct epoll_event ev;
+    ev.events = EPOLLOUT | EPOLLET;
+    ev.data.ptr = bc;
+    if (epoll_ctl(e_fd, EPOLL_CTL_MOD, bc->fd, &ev) == 0) {
+        bc->event.events = ev.events;
+    } else {
+        perror("epoll_ctl(OUT)");
+    }
 }
 
 void net_epoll_in(int e_fd, basic_conn_t *bc) {
-    epoll_disable_out(e_fd, &bc->event, bc->fd);
-    epoll_enable_in(e_fd, &bc->event, bc->fd);
+    struct epoll_event ev;
+    ev.events = EPOLLIN | EPOLLET;
+    ev.data.ptr = bc;
+    if (epoll_ctl(e_fd, EPOLL_CTL_MOD, bc->fd, &ev) == 0) {
+        bc->event.events = ev.events;
+    } else {
+        perror("epoll_ctl(IN)");
+    }
 }
 
 
@@ -586,7 +620,7 @@ void net_epoll_in(int e_fd, basic_conn_t *bc) {
 static void set_basic_conn_addr(uint8_t *start, void *addr) {
     uint64_t addr_int = (uint64_t) addr;
     for (size_t i = 0; i < ADDR_LEN; i++) {
-        start[i] = (uint8_t)(addr_int >> (BITS_PER_BYTE * i));
+        start[i] = (uint8_t) (addr_int >> (BITS_PER_BYTE * i));
     }
 }
 
@@ -606,7 +640,8 @@ bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role) {
         connection_set_nodelay(bc->fd);
 
         // zero(&bc->read_pkt);
-        bc->write_pkts = lfqueue_init();
+        // bc->write_pkts = lfqueue_init();
+        bc->write_pkts = ld_aqueue_create(NULL, 1024);
 
         net_epoll_add(bc->opt->epoll_fd, bc, EPOLLIN | EPOLLET, &bc->event);
         return TRUE;
