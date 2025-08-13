@@ -296,7 +296,7 @@ l_err defalut_send_pkt(basic_conn_t *bc, buffer_t *in_buf, l_err (*mid_func)(buf
         mid_func(buf, args);
     }
     cat_to_buffer(buf, in_buf->ptr, in_buf->len);
-    log_buf(LOG_INFO, "Send OUT", buf->ptr, buf->len);
+    // log_buf(LOG_INFO, "Send OUT", buf->ptr, buf->len);
 
     lfqueue_put(bc->write_pkts, buf);
     net_epoll_out(bc->opt->epoll_fd, bc);
@@ -397,11 +397,16 @@ static int write_packet(basic_conn_t *bc) {
             // ssize_t n = write(bc->fd, (char*)b->ptr + sent, len - sent);
             ssize_t n = write(bc->fd, (char*)to_send->ptr + sent, to_send->len - sent);
             if (n <= 0) {
-                if (n < 0 && errno == EAGAIN) {
+                if (n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
                     // 对于非阻塞套接字，EAGAIN表示暂时无法发送更多数据
                     // 应该保存剩余数据并稍后重试
+                    // 将未完成的数据重新放回队列头部，以便下次继续发送
+                    lfqueue_put(bc->write_pkts, b);
+                    free_buffer(to_send);
                     return AGAIN;
                 }
+                free_buffer(b);
+                free_buffer(to_send);
                 return n == 0 ? OK : ERROR;
             }
             sent += n;
@@ -440,10 +445,11 @@ static int response_send_buffer(basic_conn_t *bc) {
 
         case AGAIN:
             // 保持EPOLLOUT等待剩余数据
+            epoll_enable_out(bc->opt->epoll_fd, &bc->event, bc->fd);
             break;
 
         case ERROR:
-    bc->trans_done = TRUE;
+            bc->trans_done = TRUE;
             connecion_set_expired(bc);
             break;
     }
@@ -465,6 +471,10 @@ int response_handle(basic_conn_t *bc) {
         // response done
         if (bc->opt->reset_conn) bc->opt->reset_conn(bc);
         net_epoll_in(bc->opt->epoll_fd, bc);
+    }
+    else {
+        // 还有数据需要发送，继续保持EPOLLOUT事件
+        net_epoll_out(bc->opt->epoll_fd, bc);
     }
     return status;
 }
