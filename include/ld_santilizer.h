@@ -176,14 +176,14 @@ buffer_t *gen_pdu(void *objs, struct_desc_t *desc, const char *name);
 
 void *parse_sdu(buffer_t *buf, struct_desc_t *desc, size_t size);
 
-#define PARSE_DSTR_PKT(pdu, name, desc, head_len, pre_len) { \
+#define PARSE_DSTR_PKT(pdu, name, sdu_name, desc, head_len, pre_len) { \
 pb_stream gsnf_pbs; \
 zero(&gsnf_pbs); \
-name->sdu = init_buffer_ptr((pdu)->len - (head_len) - (pre_len));\
+name->sdu_name = init_buffer_ptr((pdu)->len - (head_len) - (pre_len));\
 init_pbs(&gsnf_pbs, (pdu)->ptr + (pre_len), (pdu)->len - (pre_len), "GSNF IN");\
 if (!in_struct(name, &desc, &gsnf_pbs, NULL)) { \
 log_error("Cannot parse gsnf pdu"); \
-free_buffer(name->sdu); \
+free_buffer(name->sdu_name); \
 free(name); \
 return LD_ERR_INVALID; \
 }\
