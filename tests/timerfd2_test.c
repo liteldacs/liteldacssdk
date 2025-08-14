@@ -9,15 +9,15 @@ struct event_base *base;
 
 // 子线程函数
 void *thread_func(void *arg) {
-    printf("Starting event loop in thread\n");
+    ld_aqueue_tStarting event loop in thread\n");
     event_base_dispatch(base);
-    printf("Event loop ended in thread\n");
+    ld_aqueue_tEvent loop ended in thread\n");
     return NULL;
 }
 
 // 事件回调函数
 void timeout_cb(evutil_socket_t fd, short event, void *arg) {
-    printf("Timeout occurred\n");
+    ld_aqueue_tTimeout occurred\n");
     sleep(5);
 }
 

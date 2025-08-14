@@ -306,11 +306,6 @@ static int read_packet(int fd, basic_conn_t *bc) {
     uint8_t temp[MAX_INPUT_BUFFER_SIZE] = {0};
 
         ssize_t len = read(fd, temp, sizeof(temp));
-        fprintf(stderr, "len: %03ld   => ", len);
-        for (int i = 0; i < len; i++) {
-            fprintf(stderr, "%02x ", temp[i]);
-        }
-        fprintf(stderr, "\n");
         if (len > 0) {
             uint8_t *cur = temp;
             size_t remaining = len;
