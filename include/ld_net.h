@@ -29,21 +29,10 @@ struct role_propt {
 };
 
 
+
 typedef l_err (*recv_handler)(basic_conn_t *);
 
-typedef void (*ev_accept_cb)(struct evconnlistener *listener,
-                     evutil_socket_t fd,
-                     struct sockaddr *address,
-                     int socklen,
-                     void *ctx);
-
-typedef void (*ev_accept_error_cb)(struct evconnlistener *listener, void *ctx);
-
-typedef void (*ev_signal_cb)(evutil_socket_t sig, short events, void *user_data);
-
-typedef void (*ev_data_cb)(struct bufferevent *bev, void *ctx);
-
-typedef void (*ev_event_cb)(struct bufferevent *bev, short events, void *ctx);
+typedef l_err (*recv_handler2)(buffer_t *);
 
 typedef struct net_ctx_s {
     char name[32];
@@ -77,12 +66,7 @@ typedef struct net_ctx_s {
     struct sockaddr_in6 sin6;
     int client_count;
     int client_id_counter;
-    ev_accept_cb accept_cb;
-    ev_accept_error_cb accept_error_cb;
-    ev_signal_cb signal_cb;
-    ev_event_cb event_cb;
-    ev_data_cb read_cb;
-    ev_data_cb write_cb;
+    recv_handler2 recv_handler2;
 } net_ctx_t;
 
 typedef struct basic_conn_s {

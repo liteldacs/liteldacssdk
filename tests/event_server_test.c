@@ -114,7 +114,6 @@ static void accept_cb(struct evconnlistener *listener,
                      int socklen,
                      void *ctx) {
     struct event_base *base = ctx;
-    struct bufferevent *bev;
     struct sockaddr_in *sin = (struct sockaddr_in *)address;
 
     // 创建客户端信息结构
@@ -138,7 +137,7 @@ static void accept_cb(struct evconnlistener *listener,
     evutil_make_socket_nonblocking(fd);
 
     // 创建bufferevent
-    bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
+    struct bufferevent *bev = bufferevent_socket_new(base, fd, BEV_OPT_CLOSE_ON_FREE);
     if (!bev) {
         printf("创建bufferevent失败\n");
         free(client);
