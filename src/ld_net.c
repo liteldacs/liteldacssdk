@@ -293,87 +293,18 @@ l_err defalut_send_pkt(basic_conn_t *bc, buffer_t *in_buf, l_err (*mid_func)(buf
         mid_func(buf, args);
     }
     cat_to_buffer(buf, in_buf->ptr, in_buf->len);
-    // log_buf(LOG_INFO, "Send OUT", buf->ptr, buf->len);
 
-    // lfqueue_put(bc->write_pkts, buf);
     ld_aqueue_enqueue(bc->write_pkts, buf);
-    net_epoll_out(bc->opt->epoll_fd, bc);
+
+    // 只有在当前没有待发送数据时才切换到EPOLLOUT
+    if (!bc->current_write_buffer && ld_aqueue_count(bc->write_pkts) == 1) {
+        net_epoll_out(bc->opt->epoll_fd, bc);
+    }
+    // 如果已经在发送过程中，则不需要重复设置EPOLLOUT
+
     return LD_OK;
 }
 
-// static int read_packet(int fd, basic_conn_t *bc) {
-//     uint8_t temp[MAX_INPUT_BUFFER_SIZE] = {0};
-//
-//         ssize_t len = read(fd, temp, sizeof(temp));
-//         if (len > 0) {
-//             uint8_t *cur = temp;
-//             size_t remaining = len;
-//             while (remaining > 0) {
-//                 // 检查是否至少有4个字节来读取长度
-//                 if (remaining < sizeof(uint32_t)) {
-//                     log_error("Incomplete packet header");
-//                     return ERROR;
-//                 }
-//
-//                 // 读取下一包的长度
-//                 uint32_t pkt_len;
-//                 memcpy(&pkt_len, cur, sizeof(pkt_len));
-//
-//                 //转换格式
-//                 pkt_len = ntohl(pkt_len);
-//                 if (pkt_len == 0) break;
-//                 if (pkt_len > MAX_INPUT_BUFFER_SIZE) {
-//                     log_error("Packet too large: %u", pkt_len);
-//                     return ERROR;
-//                 }
-//
-//                 // 检查是否有足够的数据
-//                 if (remaining < sizeof(uint32_t) + pkt_len) {
-//                     log_error("Incomplete packet data");
-//                     return ERROR;
-//                 }
-//
-//                 cur += sizeof(uint32_t);
-//                 remaining -= sizeof(uint32_t);
-//
-//
-//                 // 读取包内容
-//                 bc->read_pkt = init_buffer_unptr();
-//                 CLONE_TO_CHUNK(*bc->read_pkt, cur, pkt_len);
-//
-//                 if (bc->opt->recv_handler) {
-//                     if (bc->opt->recv_handler(bc) == LD_ERR_INTERNAL) {
-//                         log_error("Cannot handler received message");
-//                         return ERROR;
-//                     }
-//                 } else {
-//                     log_error("No recv handler");
-//                 }
-//                 free_buffer(bc->read_pkt);
-//                 cur += pkt_len;
-//                 remaining -= pkt_len;
-//
-//                 if (remaining == 0) break;
-//             }
-//
-//             return OK;
-//         } else if (len == 0) {
-//             // 连接正常关闭
-//             log_info("Connection closed by peer, port: %d", get_port(bc));
-//             return ERROR;
-//         } else {
-//             perror("read failed: ");
-//             // 读取错误
-//             if (errno == EAGAIN) {
-//                 // 暂时没有数据可读
-//                 return OK;
-//             }
-//             log_warn("Read from port %d, error: %s", get_port(bc), strerror(errno));
-//             return ERROR;
-//         }
-// }
-
-// ============ 4. 辅助函数：从buffer前面移除数据 ============
 static void remove_from_buffer_front(buffer_t *buf, size_t count) {
     if (!buf || count == 0) return;
 
@@ -464,12 +395,6 @@ static int process_complete_packets(basic_conn_t *bc) {
         }
     }
 
-    // // 如果缓冲区变得很大但是空的，可以考虑重新分配
-    // if (bc->recv_buffer->len == 0 && bc->recv_buffer->cap > MAX_INPUT_BUFFER_SIZE * 2) {
-    //     free_buffer(bc->recv_buffer);
-    //     bc->recv_buffer = init_buffer_unptr();
-    // }
-
     return OK;
 }
 // ============ 2. 改进的 read_packet 函数 ============
@@ -516,6 +441,7 @@ static int read_packet(int fd, basic_conn_t *bc) {
             if (err == EAGAIN || err == EWOULDBLOCK) {
                 // 非阻塞socket暂时没有数据，这是正常的
                 // 如果读取过数据，返回OK；否则也返回OK（表示没有新数据）
+                // log_warn("AGAIN");
 
                 return OK;
 
@@ -562,63 +488,131 @@ static int read_packet(int fd, basic_conn_t *bc) {
  * AGAIN: haven't sent all data
  * ERROR: error
  */
+// static int write_packet(basic_conn_t *bc) {
+//     // while (lfqueue_size(bc->write_pkts) != 0) {
+//     while (ld_aqueue_count(bc->write_pkts) > 0) {
+//         buffer_t *to_send = init_buffer_unptr();
+//         // buffer_t *b = NULL;
+//         // lfqueue_get(bc->write_pkts, (void **) &b);
+//         // lfqueue_get_wait(bc->write_pkts, (void **) &b);
+//         buffer_t *b = ld_aqueue_dequeue(bc->write_pkts);
+//         if (!b) {
+//             log_error("Send buffer null: %d %p", ld_aqueue_count(bc->write_pkts), bc->write_pkts);
+//             continue;
+//             // return ERROR;
+//         }
+//         size_t len = b->len;
+//         // 添加4字节长度头
+//         uint32_t pkt_len = htonl(len);
+//
+//         cat_to_buffer(to_send, (uint8_t *) &pkt_len, sizeof(pkt_len));
+//         cat_to_buffer(to_send, b->ptr, len);
+//
+//         size_t sent = 0;
+//         while (sent < to_send->len) {
+//             // ssize_t n = write(bc->fd, (char*)b->ptr + sent, len - sent);
+//             ssize_t n = write(bc->fd, (char *) to_send->ptr + sent, to_send->len - sent);
+//             if (n <= 0) {
+//                 if (n < 0 && errno == EAGAIN) {
+//                     // 对于非阻塞套接字，EAGAIN表示暂时无法发送更多数据
+//                     // 应该保存剩余数据并稍后重试
+//                     log_warn("ERROR");
+//                     return AGAIN;
+//                 }
+//                 // return n == 0 ? OK : ERROR;
+//                 if (n == 0) {
+//                     return OK;
+//                 } else {
+//                     log_warn("ERROR");
+//                     return ERROR;
+//                 }
+//             }
+//             sent += n;
+//         }
+//
+//         free_buffer(b);
+//         free_buffer(to_send);
+//     }
+//     return OK;
+// }
 static int write_packet(basic_conn_t *bc) {
-    // while (lfqueue_size(bc->write_pkts) != 0) {
+    // 如果有未完成的发送缓冲区，先处理它
+    if (bc->current_write_buffer) {
+        size_t remaining = bc->current_write_buffer->len - bc->current_write_offset;
+        ssize_t n = write(bc->fd,
+                         (char*)bc->current_write_buffer->ptr + bc->current_write_offset,
+                         remaining);
+
+        if (n > 0) {
+            bc->current_write_offset += n;
+            if (bc->current_write_offset >= bc->current_write_buffer->len) {
+                // 当前缓冲区发送完成
+                free_buffer(bc->current_write_buffer);
+                bc->current_write_buffer = NULL;
+                bc->current_write_offset = 0;
+            } else {
+                // 还有数据未发送完
+                return AGAIN;
+            }
+        } else if (n == 0) {
+            return OK;
+        } else {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                return AGAIN;
+            }
+            log_error("Write error: %s", strerror(errno));
+            return ERROR;
+        }
+    }
+
+    // 处理队列中的新数据包
     while (ld_aqueue_count(bc->write_pkts) > 0) {
-        buffer_t *to_send = init_buffer_unptr();
-        // buffer_t *b = NULL;
-        // lfqueue_get(bc->write_pkts, (void **) &b);
-        // lfqueue_get_wait(bc->write_pkts, (void **) &b);
         buffer_t *b = ld_aqueue_dequeue(bc->write_pkts);
         if (!b) {
-            log_error("Send buffer null: %d %p", ld_aqueue_count(bc->write_pkts), bc->write_pkts);
+            log_error("Send buffer null: %d", ld_aqueue_count(bc->write_pkts));
             continue;
-            // return ERROR;
         }
-        size_t len = b->len;
-        // 添加4字节长度头
-        uint32_t pkt_len = htonl(len);
 
-        cat_to_buffer(to_send, (uint8_t *) &pkt_len, sizeof(pkt_len));
-        cat_to_buffer(to_send, b->ptr, len);
-
-        size_t sent = 0;
-        while (sent < to_send->len) {
-            // ssize_t n = write(bc->fd, (char*)b->ptr + sent, len - sent);
-            ssize_t n = write(bc->fd, (char *) to_send->ptr + sent, to_send->len - sent);
-            if (n <= 0) {
-                if (n < 0 && errno == EAGAIN) {
-                    // 对于非阻塞套接字，EAGAIN表示暂时无法发送更多数据
-                    // 应该保存剩余数据并稍后重试
-                    log_warn("ERROR");
-                    return AGAIN;
-                }
-                // return n == 0 ? OK : ERROR;
-                if (n == 0) {
-                    return OK;
-                } else {
-                    log_warn("ERROR");
-                    return ERROR;
-                }
-            }
-            sent += n;
-        }
+        // 创建带长度头的完整包
+        bc->current_write_buffer = init_buffer_unptr();
+        uint32_t pkt_len = htonl(b->len);
+        cat_to_buffer(bc->current_write_buffer, (uint8_t*)&pkt_len, sizeof(pkt_len));
+        cat_to_buffer(bc->current_write_buffer, b->ptr, b->len);
+        bc->current_write_offset = 0;
 
         free_buffer(b);
-        free_buffer(to_send);
+
+        // 尝试发送
+        size_t remaining = bc->current_write_buffer->len;
+        ssize_t n = write(bc->fd, (char*)bc->current_write_buffer->ptr, remaining);
+
+        if (n > 0) {
+            bc->current_write_offset += n;
+            if (bc->current_write_offset >= bc->current_write_buffer->len) {
+                // 完整发送
+                free_buffer(bc->current_write_buffer);
+                bc->current_write_buffer = NULL;
+                bc->current_write_offset = 0;
+                // 继续处理下一个包
+            } else {
+                log_warn("====================");
+                // 部分发送，等待下次EPOLLOUT
+                return AGAIN;
+            }
+        } else if (n == 0) {
+            return OK;
+        } else {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                return AGAIN;
+            }
+            log_error("Write error: %s", strerror(errno));
+            return ERROR;
+        }
     }
+
     return OK;
 }
 
-// int request_handle(basic_conn_t *bc) {
-//     if (bc->opt->recv_handler) {
-//         if (read_packet(bc->fd, bc) == ERROR) return ERROR;
-//         // bc->opt->recv_handler(bc);
-//     }
-//
-//     return OK;
-// }
-// ============ 7. 改进的 request_handle 函数 ============
 int request_handle(basic_conn_t *bc) {
     if (!bc || !bc->opt) {
         log_error("Invalid connection context");
@@ -650,21 +644,24 @@ int request_handle(basic_conn_t *bc) {
 
 static int response_send_buffer(basic_conn_t *bc) {
     int status = write_packet(bc);
-    // if (status != OK) {
-    //     return status;
-    // } else {
-    //     bc->trans_done = TRUE;
-    //     return OK;
-    // }
 
     switch (status) {
         case OK:
-            net_epoll_in(bc->opt->epoll_fd, bc);
-            bc->trans_done = TRUE;
+            // 检查是否还有待发送数据
+            if (ld_aqueue_count(bc->write_pkts) == 0 && !bc->current_write_buffer) {
+                // 所有数据发送完成
+                bc->trans_done = TRUE;
+                net_epoll_in(bc->opt->epoll_fd, bc);
+            } else {
+                // 还有数据要发送，保持EPOLLOUT状态
+                bc->trans_done = FALSE;
+            }
             break;
 
         case AGAIN:
-            // 保持EPOLLOUT等待剩余数据
+            // 发送缓冲区满，等待下次EPOLLOUT
+            bc->trans_done = FALSE;
+            // 保持当前EPOLLOUT状态，不修改
             break;
 
         case ERROR:
@@ -678,19 +675,30 @@ static int response_send_buffer(basic_conn_t *bc) {
 
 
 int response_handle(basic_conn_t *bc) {
-    int status;
+    int status = response_send_buffer(bc);
 
-    // if (bc->opt->send_handler) {
-    //     bc->opt->send_handler(bc);
-    // }
-    do {
-        status = response_send_buffer(bc);
-    } while (status == OK && bc->trans_done != TRUE);
-    if (bc->trans_done) {
-        // response done
-        if (bc->opt->reset_conn) bc->opt->reset_conn(bc);
-        net_epoll_in(bc->opt->epoll_fd, bc);
+    // 根据状态决定后续行为
+    switch (status) {
+        case OK:
+            if (bc->trans_done) {
+                // 发送完成，重置连接状态
+                if (bc->opt->reset_conn) {
+                    bc->opt->reset_conn(bc);
+                }
+                net_epoll_in(bc->opt->epoll_fd, bc);
+            }
+            break;
+
+        case AGAIN:
+            // 继续等待EPOLLOUT事件，不修改epoll状态
+            break;
+
+        case ERROR:
+            // 连接出错，标记为过期
+            connecion_set_expired(bc);
+            break;
     }
+
     return status;
 }
 
@@ -700,7 +708,7 @@ void *net_setup(void *args) {
     net_ctx_t *net_ctx = args;
 
     while (TRUE) {
-        nfds = core_epoll_wait(net_ctx->epoll_fd, epoll_events, MAX_EVENTS, -1);
+        nfds = core_epoll_wait(net_ctx->epoll_fd, net_ctx->epoll_events, MAX_EVENTS, -1);
 
         if (nfds == ERROR) {
             // if not caused by signal, cannot recover
@@ -709,7 +717,7 @@ void *net_setup(void *args) {
 
         /* processing ready fd one by one */
         for (i = 0; i < nfds; i++) {
-            struct epoll_event *curr_event = epoll_events + i;
+            struct epoll_event *curr_event = net_ctx->epoll_events + i;
             int fd = *((int *) curr_event->data.ptr);
             if (fd == net_ctx->server_fd) {
                 // gs_conn_accept(net_opt); /* never happened in GS */
@@ -750,22 +758,6 @@ void *net_setup(void *args) {
                 } else if (should_reactivate) {
                     connecion_set_reactivated(bc);
                 }
-                // connecion_set_reactivated(bc);
-
-                // if (curr_event->events & EPOLLIN) {
-                //     //recv
-                //     status = request_handle(bc);
-                // }
-                // if (curr_event->events & EPOLLOUT) {
-                //     //send
-                //     status = response_handle(bc);
-                // }
-                //
-                // if (status == ERROR) {
-                //     connecion_set_expired(bc);
-                // } else {
-                //     connecion_set_reactivated(bc);
-                // }
             }
         }
         server_connection_prune(net_ctx);
@@ -780,16 +772,6 @@ int net_epoll_add(int e_fd, basic_conn_t *bc, uint32_t events,
     FILL_EPOLL_EVENT(pev, bc, events);
     return core_epoll_add(e_fd, bc->fd, pev);
 }
-
-// void net_epoll_out(int e_fd, basic_conn_t *bc) {
-//     epoll_disable_in(e_fd, &bc->event, bc->fd);
-//     epoll_enable_out(e_fd, &bc->event, bc->fd);
-// }
-//
-// void net_epoll_in(int e_fd, basic_conn_t *bc) {
-//     epoll_disable_out(e_fd, &bc->event, bc->fd);
-//     epoll_enable_in(e_fd, &bc->event, bc->fd);
-// }
 
 void net_epoll_out(int e_fd, basic_conn_t *bc) {
     struct epoll_event ev;
@@ -828,34 +810,7 @@ static void set_basic_conn_addr(uint8_t *start, void *addr) {
     }
 }
 
-// bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role) {
-//     do {
-//         bc->fd = 0;
-//         bc->opt = ctx;
-//         bc->rp = get_role_propt(socket_role);
-//         bc->fd = bc->rp->handler(bc);
-//
-//         if (bc->fd == ERROR) break;
-//
-//         ABORT_ON(bc->opt->epoll_fd == 0 || bc->opt->epoll_fd == ERROR, "illegal epoll fd");
-//
-//         if (connection_register(bc, time(NULL)) == ERROR) break;
-//         set_fd_nonblocking(bc->fd);
-//         connection_set_nodelay(bc->fd);
-//
-//         // zero(&bc->read_pkt);
-//         // bc->write_pkts = lfqueue_init();
-//         bc->write_pkts = ld_aqueue_create(NULL, 1024);
-//
-//         net_epoll_add(bc->opt->epoll_fd, bc, EPOLLIN | EPOLLET, &bc->event);
-//         return TRUE;
-//     } while (0);
-//
-//     connection_close(bc);
-//     return FALSE;
-// }
-//
-// ============ 5. 改进的 init_basic_conn 函数 ============
+
 bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role) {
     do {
         // 清零整个结构体
@@ -970,21 +925,6 @@ void connection_unregister(basic_conn_t *bc) {
 }
 
 
-// /* close connection, free memory */
-// void connection_close(basic_conn_t *bc) {
-//     passert(bc != NULL);
-//     ABORT_ON(bc->fd == ERROR, "FD ERROR");
-//
-//     core_epoll_del(bc->opt->epoll_fd, bc->fd, 0, NULL);
-//     if (close(bc->fd) == ERROR) {
-//         log_info("The remote has closed, EXIT!");
-//         //raise(SIGINT); /* terminal, send signal */
-//     }
-//
-//     connection_unregister(bc);
-// }
-
-// ============ 6. 改进的 connection_close 函数 ============
 void connection_close(basic_conn_t *bc) {
     if (!bc) return;
 
@@ -1022,7 +962,7 @@ void connection_close(basic_conn_t *bc) {
         while ((buf = ld_aqueue_dequeue(bc->write_pkts)) != NULL) {
             free_buffer(buf);
         }
-        ld_aqueue_destory(bc->write_pkts);
+        ld_aqueue_destroy(bc->write_pkts);
         bc->write_pkts = NULL;
     }
 

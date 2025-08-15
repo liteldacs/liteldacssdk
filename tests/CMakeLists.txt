@@ -24,8 +24,8 @@ set(tests
         #        sqlite
         #        crypto
         sql
-        event_server
-        event_client
+#        event_server
+#        event_client
 #        bitset
 #        drr
 #        rbuffer

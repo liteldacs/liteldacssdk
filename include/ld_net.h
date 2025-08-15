@@ -56,17 +56,18 @@ typedef struct net_ctx_s {
 
     l_err (*accept_handler)(struct net_ctx_s *);
 
+    // struct event_base *base ;
+    // struct evconnlistener *listener;
+    // struct event *signal_event;
+    // struct sockaddr_in sin;
+    // struct sockaddr_in6 sin6;
+    // int client_count;
+    // int client_id_counter;
+    // recv_handler2 recv_handler2;
+    //
 
+    struct epoll_event epoll_events[MAX_EVENTS]; // global
 
-
-    struct event_base *base ;
-    struct evconnlistener *listener;
-    struct event *signal_event;
-    struct sockaddr_in sin;
-    struct sockaddr_in6 sin6;
-    int client_count;
-    int client_id_counter;
-    recv_handler2 recv_handler2;
 } net_ctx_t;
 
 typedef struct basic_conn_s {
@@ -99,6 +100,7 @@ typedef struct basic_conn_s {
         CONN_STATE_CLOSING,
         CONN_STATE_CLOSED
     } state;
+
 } basic_conn_t;
 
 bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role);

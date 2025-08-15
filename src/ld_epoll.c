@@ -4,9 +4,6 @@
 
 #include "ld_epoll.h"
 
-struct epoll_event epoll_events[MAX_EVENTS];
-
-
 int set_fd_nonblocking(int fd) {
     int flag = fcntl(fd, F_GETFL, 0);
     if (flag == ERROR) {

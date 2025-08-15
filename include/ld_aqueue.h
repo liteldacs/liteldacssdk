@@ -59,7 +59,7 @@ extern "C" {
 
     /* destroy a mpscq. Frees the internal buffer, and
      * frees q if it was created by passing NULL to mpscq_create */
-    void ld_aqueue_destory(ld_aqueue_t *q);
+    void ld_aqueue_destroy(ld_aqueue_t *q);
 
 #ifdef __cplusplus
 }

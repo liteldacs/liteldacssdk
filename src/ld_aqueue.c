@@ -29,7 +29,7 @@ ld_aqueue_t *ld_aqueue_create(ld_aqueue_t *n, size_t capacity)
 	return n;
 }
 
-void ld_aqueue_destory(ld_aqueue_t *q)
+void ld_aqueue_destroy(ld_aqueue_t *q)
 {
 	free(q->buffer);
 	if(q->flags & MPSCQ_MALLOC)
