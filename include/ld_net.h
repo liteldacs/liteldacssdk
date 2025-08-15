@@ -87,6 +87,18 @@ typedef struct basic_conn_s {
 
     buffer_t *current_write_buffer;  // 当前正在发送的 buffer
     size_t current_write_offset;     // 已经发送了多少字节（在 to_send 中）
+
+    // ===== 新增字段用于处理粘包/半包 =====
+    buffer_t *recv_buffer;        // 接收缓冲区，用于存储不完整的数据
+    uint32_t expected_pkt_len;    // 期望接收的包体长度（不含4字节头）
+    bool reading_header;          // true=正在读包头, false=正在读包体
+
+    // ===== 可选：连接状态管理 =====
+    enum {
+        CONN_STATE_CONNECTED,
+        CONN_STATE_CLOSING,
+        CONN_STATE_CLOSED
+    } state;
 } basic_conn_t;
 
 bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role);

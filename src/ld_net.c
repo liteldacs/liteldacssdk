@@ -27,7 +27,6 @@ static int make_std_tcp_connect(struct sockaddr_in *to_conn_addr, char *addr, in
     struct in_addr s;
     int fd;
 
-
     inet_pton(AF_INET, addr, &s);
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == ERROR)
         return ERROR;
@@ -302,77 +301,259 @@ l_err defalut_send_pkt(basic_conn_t *bc, buffer_t *in_buf, l_err (*mid_func)(buf
     return LD_OK;
 }
 
-static int read_packet(int fd, basic_conn_t *bc) {
-    uint8_t temp[MAX_INPUT_BUFFER_SIZE] = {0};
+// static int read_packet(int fd, basic_conn_t *bc) {
+//     uint8_t temp[MAX_INPUT_BUFFER_SIZE] = {0};
+//
+//         ssize_t len = read(fd, temp, sizeof(temp));
+//         if (len > 0) {
+//             uint8_t *cur = temp;
+//             size_t remaining = len;
+//             while (remaining > 0) {
+//                 // 检查是否至少有4个字节来读取长度
+//                 if (remaining < sizeof(uint32_t)) {
+//                     log_error("Incomplete packet header");
+//                     return ERROR;
+//                 }
+//
+//                 // 读取下一包的长度
+//                 uint32_t pkt_len;
+//                 memcpy(&pkt_len, cur, sizeof(pkt_len));
+//
+//                 //转换格式
+//                 pkt_len = ntohl(pkt_len);
+//                 if (pkt_len == 0) break;
+//                 if (pkt_len > MAX_INPUT_BUFFER_SIZE) {
+//                     log_error("Packet too large: %u", pkt_len);
+//                     return ERROR;
+//                 }
+//
+//                 // 检查是否有足够的数据
+//                 if (remaining < sizeof(uint32_t) + pkt_len) {
+//                     log_error("Incomplete packet data");
+//                     return ERROR;
+//                 }
+//
+//                 cur += sizeof(uint32_t);
+//                 remaining -= sizeof(uint32_t);
+//
+//
+//                 // 读取包内容
+//                 bc->read_pkt = init_buffer_unptr();
+//                 CLONE_TO_CHUNK(*bc->read_pkt, cur, pkt_len);
+//
+//                 if (bc->opt->recv_handler) {
+//                     if (bc->opt->recv_handler(bc) == LD_ERR_INTERNAL) {
+//                         log_error("Cannot handler received message");
+//                         return ERROR;
+//                     }
+//                 } else {
+//                     log_error("No recv handler");
+//                 }
+//                 free_buffer(bc->read_pkt);
+//                 cur += pkt_len;
+//                 remaining -= pkt_len;
+//
+//                 if (remaining == 0) break;
+//             }
+//
+//             return OK;
+//         } else if (len == 0) {
+//             // 连接正常关闭
+//             log_info("Connection closed by peer, port: %d", get_port(bc));
+//             return ERROR;
+//         } else {
+//             perror("read failed: ");
+//             // 读取错误
+//             if (errno == EAGAIN) {
+//                 // 暂时没有数据可读
+//                 return OK;
+//             }
+//             log_warn("Read from port %d, error: %s", get_port(bc), strerror(errno));
+//             return ERROR;
+//         }
+// }
 
-        ssize_t len = read(fd, temp, sizeof(temp));
-        if (len > 0) {
-            uint8_t *cur = temp;
-            size_t remaining = len;
-            while (remaining > 0) {
-                // 检查是否至少有4个字节来读取长度
-                if (remaining < sizeof(uint32_t)) {
-                    log_error("Incomplete packet header");
-                    return ERROR;
-                }
+// ============ 4. 辅助函数：从buffer前面移除数据 ============
+static void remove_from_buffer_front(buffer_t *buf, size_t count) {
+    if (!buf || count == 0) return;
 
-                // 读取下一包的长度
-                uint32_t pkt_len;
-                memcpy(&pkt_len, cur, sizeof(pkt_len));
+    if (count >= buf->len) {
+        // 移除所有数据
+        buf->len = 0;
+        return;
+    }
 
-                //转换格式
-                pkt_len = ntohl(pkt_len);
-                if (pkt_len == 0) break;
-                if (pkt_len > MAX_INPUT_BUFFER_SIZE) {
-                    log_error("Packet too large: %u", pkt_len);
-                    return ERROR;
-                }
-
-                // 检查是否有足够的数据
-                if (remaining < sizeof(uint32_t) + pkt_len) {
-                    log_error("Incomplete packet data");
-                    return ERROR;
-                }
-
-                cur += sizeof(uint32_t);
-                remaining -= sizeof(uint32_t);
-
-
-                // 读取包内容
-                bc->read_pkt = init_buffer_unptr();
-                CLONE_TO_CHUNK(*bc->read_pkt, cur, pkt_len);
-
-                if (bc->opt->recv_handler) {
-                    if (bc->opt->recv_handler(bc) == LD_ERR_INTERNAL) {
-                        log_error("Cannot handler received message");
-                        return ERROR;
-                    }
-                } else {
-                    log_error("No recv handler");
-                }
-                free_buffer(bc->read_pkt);
-                cur += pkt_len;
-                remaining -= pkt_len;
-
-                if (remaining == 0) break;
-            }
-
-            return OK;
-        } else if (len == 0) {
-            // 连接正常关闭
-            log_info("Connection closed by peer, port: %d", get_port(bc));
-            return ERROR;
-        } else {
-            perror("read failed: ");
-            // 读取错误
-            if (errno == EAGAIN) {
-                // 暂时没有数据可读
-                return OK;
-            }
-            log_warn("Read from port %d, error: %s", get_port(bc), strerror(errno));
-            return ERROR;
-        }
+    // 移动剩余数据到开头
+    memmove(buf->ptr, buf->ptr + count, buf->len - count);
+    buf->len -= count;
 }
+// ============ 3. 处理完整数据包的函数 ============
+static int process_complete_packets(basic_conn_t *bc) {
+    if (!bc->recv_buffer) {
+        return OK;
+    }
+
+    // 循环处理所有完整的数据包
+    while (bc->recv_buffer->len > 0) {
+        if (bc->reading_header) {
+            // 正在读取包头（4字节长度）
+            if (bc->recv_buffer->len < sizeof(uint32_t)) {
+                // 包头不完整，等待更多数据
+                break;
+            }
+
+            // 读取包长度
+            uint32_t pkt_len_network;
+            memcpy(&pkt_len_network, bc->recv_buffer->ptr, sizeof(uint32_t));
+            bc->expected_pkt_len = ntohl(pkt_len_network);
+
+            // 验证包长度
+            if (bc->expected_pkt_len == 0) {
+                log_warn("Received packet with zero length");
+                // 移除包头，继续处理
+                remove_from_buffer_front(bc->recv_buffer, sizeof(uint32_t));
+                continue;
+            }
+
+            if (bc->expected_pkt_len > MAX_INPUT_BUFFER_SIZE) {
+                log_error("Packet too large: %u bytes (max: %d)",
+                         bc->expected_pkt_len, MAX_INPUT_BUFFER_SIZE);
+                return ERROR;
+            }
+
+            // 移除包头
+            remove_from_buffer_front(bc->recv_buffer, sizeof(uint32_t));
+            bc->reading_header = false;
+
+        } else {
+            // 正在读取包体
+            if (bc->recv_buffer->len < bc->expected_pkt_len) {
+                // 包体不完整，等待更多数据
+                break;
+            }
+
+            // 提取完整的包体
+            if (bc->read_pkt) {
+                free_buffer(bc->read_pkt);
+            }
+            bc->read_pkt = init_buffer_unptr();
+            CLONE_TO_CHUNK(*bc->read_pkt, bc->recv_buffer->ptr, bc->expected_pkt_len);
+
+            // 调用接收处理器
+            if (bc->opt->recv_handler) {
+                l_err result = bc->opt->recv_handler(bc);
+                if (result == LD_ERR_INTERNAL) {
+                    log_error("recv_handler failed for packet of %u bytes",
+                             bc->expected_pkt_len);
+                    free_buffer(bc->read_pkt);
+                    bc->read_pkt = NULL;
+                    return ERROR;
+                }
+            }
+
+            // 清理已处理的包
+            free_buffer(bc->read_pkt);
+            bc->read_pkt = NULL;
+
+            // 从缓冲区移除已处理的数据
+            remove_from_buffer_front(bc->recv_buffer, bc->expected_pkt_len);
+
+            // 准备读取下一个包头
+            bc->reading_header = true;
+            bc->expected_pkt_len = 0;
+        }
+    }
+
+    // // 如果缓冲区变得很大但是空的，可以考虑重新分配
+    // if (bc->recv_buffer->len == 0 && bc->recv_buffer->cap > MAX_INPUT_BUFFER_SIZE * 2) {
+    //     free_buffer(bc->recv_buffer);
+    //     bc->recv_buffer = init_buffer_unptr();
+    // }
+
+    return OK;
+}
+// ============ 2. 改进的 read_packet 函数 ============
+static int read_packet(int fd, basic_conn_t *bc) {
+    uint8_t temp[MAX_INPUT_BUFFER_SIZE];
+    ssize_t len;
+    bool has_read_any = false;
+
+    // 初始化接收缓冲区（如果还没有的话）
+    if (!bc->recv_buffer) {
+        bc->recv_buffer = init_buffer_unptr();
+        bc->reading_header = true;
+        bc->expected_pkt_len = 0;
+    }
+
+    // 边缘触发模式：必须循环读取直到EAGAIN
+    while (1) {
+        len = read(fd, temp, sizeof(temp));
+
+        if (len > 0) {
+            has_read_any = true;
+
+            // 将读取的数据追加到接收缓冲区
+            cat_to_buffer(bc->recv_buffer, temp, len);
+
+            // 尝试处理完整的数据包
+            if (process_complete_packets(bc) == ERROR) {
+                return ERROR;
+            }
+
+            // 继续读取更多数据
+            continue;
+
+        } else if (len == 0) {
+            // 对端正常关闭连接
+            log_info("Connection closed by peer, port: %d", get_port(bc));
+            bc->state = CONN_STATE_CLOSED;
+            return ERROR;
+
+        } else { // len < 0
+            // 检查错误类型
+            int err = errno;
+
+            if (err == EAGAIN || err == EWOULDBLOCK) {
+                // 非阻塞socket暂时没有数据，这是正常的
+                // 如果读取过数据，返回OK；否则也返回OK（表示没有新数据）
+
+                return OK;
+
+            } else if (err == EINTR) {
+                // 被信号中断，继续尝试
+                if (!has_read_any) {
+                    // 如果还没读到任何数据，继续尝试
+                    continue;
+                }
+                // 已经读到一些数据了，先处理这些
+                return OK;
+
+            } else if (err == ECONNRESET) {
+                // 连接被对方重置
+                log_warn("Connection reset by peer, port: %d", get_port(bc));
+                bc->state = CONN_STATE_CLOSED;
+                return ERROR;
+
+            } else if (err == ETIMEDOUT) {
+                // 连接超时
+                log_warn("Connection timeout, port: %d", get_port(bc));
+                return ERROR;
+
+            } else if (err == EBADF || err == EINVAL) {
+                // 无效的文件描述符，严重错误
+                log_error("Invalid fd %d, error: %s", fd, strerror(err));
+                return ERROR;
+
+            } else {
+                // 其他未预期的错误
+                log_error("Unexpected read error on port %d: %s (errno=%d)",
+                         get_port(bc), strerror(err), err);
+                return ERROR;
+            }
+        }
+    }
+}
+
 
 
 /**
@@ -429,14 +610,42 @@ static int write_packet(basic_conn_t *bc) {
     return OK;
 }
 
+// int request_handle(basic_conn_t *bc) {
+//     if (bc->opt->recv_handler) {
+//         if (read_packet(bc->fd, bc) == ERROR) return ERROR;
+//         // bc->opt->recv_handler(bc);
+//     }
+//
+//     return OK;
+// }
+// ============ 7. 改进的 request_handle 函数 ============
 int request_handle(basic_conn_t *bc) {
+    if (!bc || !bc->opt) {
+        log_error("Invalid connection context");
+        return ERROR;
+    }
+
+    // 检查连接状态
+    if (bc->state != CONN_STATE_CONNECTED) {
+        log_warn("Connection not in connected state");
+        return ERROR;
+    }
+
+    // 检查fd有效性
+    if (bc->fd < 0 || bc->fd == DEFAULT_FD) {
+        log_error("Invalid fd: %d", bc->fd);
+        return ERROR;
+    }
+
+    // 读取并处理数据
     if (bc->opt->recv_handler) {
-        if (read_packet(bc->fd, bc) == ERROR) return ERROR;
-        // bc->opt->recv_handler(bc);
+        int result = read_packet(bc->fd, bc);
+        return result;
     }
 
     return OK;
 }
+
 
 
 static int response_send_buffer(basic_conn_t *bc) {
@@ -619,29 +828,96 @@ static void set_basic_conn_addr(uint8_t *start, void *addr) {
     }
 }
 
+// bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role) {
+//     do {
+//         bc->fd = 0;
+//         bc->opt = ctx;
+//         bc->rp = get_role_propt(socket_role);
+//         bc->fd = bc->rp->handler(bc);
+//
+//         if (bc->fd == ERROR) break;
+//
+//         ABORT_ON(bc->opt->epoll_fd == 0 || bc->opt->epoll_fd == ERROR, "illegal epoll fd");
+//
+//         if (connection_register(bc, time(NULL)) == ERROR) break;
+//         set_fd_nonblocking(bc->fd);
+//         connection_set_nodelay(bc->fd);
+//
+//         // zero(&bc->read_pkt);
+//         // bc->write_pkts = lfqueue_init();
+//         bc->write_pkts = ld_aqueue_create(NULL, 1024);
+//
+//         net_epoll_add(bc->opt->epoll_fd, bc, EPOLLIN | EPOLLET, &bc->event);
+//         return TRUE;
+//     } while (0);
+//
+//     connection_close(bc);
+//     return FALSE;
+// }
+//
+// ============ 5. 改进的 init_basic_conn 函数 ============
 bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role) {
     do {
-        bc->fd = 0;
+        // 清零整个结构体
+
+        bc->fd = DEFAULT_FD;
         bc->opt = ctx;
         bc->rp = get_role_propt(socket_role);
         bc->fd = bc->rp->handler(bc);
 
-        if (bc->fd == ERROR) break;
+        if (bc->fd == ERROR || bc->fd < 0) {
+            log_error("Failed to create connection fd");
+            break;
+        }
 
         ABORT_ON(bc->opt->epoll_fd == 0 || bc->opt->epoll_fd == ERROR, "illegal epoll fd");
 
-        if (connection_register(bc, time(NULL)) == ERROR) break;
-        set_fd_nonblocking(bc->fd);
+        if (connection_register(bc, time(NULL)) == ERROR) {
+            log_error("Failed to register connection");
+            break;
+        }
+
+        // 设置非阻塞
+        if (set_fd_nonblocking(bc->fd) == ERROR) {
+            log_error("Failed to set non-blocking mode");
+            break;
+        }
+
+        // 设置TCP_NODELAY
         connection_set_nodelay(bc->fd);
 
-        // zero(&bc->read_pkt);
-        // bc->write_pkts = lfqueue_init();
+        // 初始化队列和缓冲区
         bc->write_pkts = ld_aqueue_create(NULL, 1024);
+        if (!bc->write_pkts) {
+            log_error("Failed to create write queue");
+            break;
+        }
 
-        net_epoll_add(bc->opt->epoll_fd, bc, EPOLLIN | EPOLLET, &bc->event);
+        // 初始化接收相关字段
+        bc->recv_buffer = NULL;  // 延迟初始化，在第一次读取时创建
+        bc->read_pkt = NULL;
+        bc->reading_header = true;
+        bc->expected_pkt_len = 0;
+
+        // 初始化发送相关字段
+        bc->current_write_buffer = NULL;
+        bc->current_write_offset = 0;
+        bc->trans_done = false;
+
+        // 设置连接状态
+        bc->state = CONN_STATE_CONNECTED;
+
+        // 添加到epoll
+        if (net_epoll_add(bc->opt->epoll_fd, bc, EPOLLIN | EPOLLET, &bc->event) == ERROR) {
+            log_error("Failed to add to epoll");
+            break;
+        }
+
         return TRUE;
+
     } while (0);
 
+    // 清理资源
     connection_close(bc);
     return FALSE;
 }
@@ -694,20 +970,72 @@ void connection_unregister(basic_conn_t *bc) {
 }
 
 
-/* close connection, free memory */
-void connection_close(basic_conn_t *bc) {
-    passert(bc != NULL);
-    ABORT_ON(bc->fd == ERROR, "FD ERROR");
+// /* close connection, free memory */
+// void connection_close(basic_conn_t *bc) {
+//     passert(bc != NULL);
+//     ABORT_ON(bc->fd == ERROR, "FD ERROR");
+//
+//     core_epoll_del(bc->opt->epoll_fd, bc->fd, 0, NULL);
+//     if (close(bc->fd) == ERROR) {
+//         log_info("The remote has closed, EXIT!");
+//         //raise(SIGINT); /* terminal, send signal */
+//     }
+//
+//     connection_unregister(bc);
+// }
 
-    core_epoll_del(bc->opt->epoll_fd, bc->fd, 0, NULL);
-    if (close(bc->fd) == ERROR) {
-        log_info("The remote has closed, EXIT!");
-        //raise(SIGINT); /* terminal, send signal */
+// ============ 6. 改进的 connection_close 函数 ============
+void connection_close(basic_conn_t *bc) {
+    if (!bc) return;
+
+    // 标记状态
+    bc->state = CONN_STATE_CLOSING;
+
+    // 从epoll移除并关闭socket
+    if (bc->fd != DEFAULT_FD && bc->fd != ERROR && bc->fd >= 0) {
+        core_epoll_del(bc->opt->epoll_fd, bc->fd, 0, NULL);
+        close(bc->fd);
+        bc->fd = DEFAULT_FD;
     }
 
+    // 清理接收缓冲区
+    if (bc->recv_buffer) {
+        free_buffer(bc->recv_buffer);
+        bc->recv_buffer = NULL;
+    }
+
+    // 清理当前读取的包
+    if (bc->read_pkt) {
+        free_buffer(bc->read_pkt);
+        bc->read_pkt = NULL;
+    }
+
+    // 清理当前发送缓冲区
+    if (bc->current_write_buffer) {
+        free_buffer(bc->current_write_buffer);
+        bc->current_write_buffer = NULL;
+    }
+
+    // 清理发送队列
+    if (bc->write_pkts) {
+        buffer_t *buf;
+        while ((buf = ld_aqueue_dequeue(bc->write_pkts)) != NULL) {
+            free_buffer(buf);
+        }
+        ld_aqueue_destory(bc->write_pkts);
+        bc->write_pkts = NULL;
+    }
+
+    // 重置状态
+    bc->reading_header = true;
+    bc->expected_pkt_len = 0;
+    bc->current_write_offset = 0;
+    bc->trans_done = false;
+    bc->state = CONN_STATE_CLOSED;
+
+    // 从连接管理器注销
     connection_unregister(bc);
 }
-
 void server_connection_prune(net_ctx_t *opt) {
     time_t current_time = time(NULL);
     int pruned_count = 0;
