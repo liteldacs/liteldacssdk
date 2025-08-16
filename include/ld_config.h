@@ -31,6 +31,7 @@ typedef struct config_s {
     bool is_merged;
     bool is_beihang;
     bool is_e304;
+    bool direct_snp;
 
     /* net */
     uint8_t ip_ver;
@@ -50,7 +51,6 @@ typedef struct config_s {
     bool use_http;
     uint16_t http_port; /* listen port */
     bool auto_auth;
-
 
     /* role tags */
     uint32_t UA;
