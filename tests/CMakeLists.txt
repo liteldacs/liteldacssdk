@@ -24,6 +24,7 @@ set(tests
         #        sqlite
         #        crypto
         sql
+        ui
 #        event_server
 #        event_client
 #        bitset
@@ -59,8 +60,19 @@ endif ()
 enable_testing()
 foreach (name ${tests})
     add_test(NAME ${name} COMMAND ${name}test)
+
     add_executable(${name}test ${name}_test.c)
-    target_link_libraries(${name}test LINK_PUBLIC liteldacssdk yaml cjson base64 event event_pthreads)
+
+    if(${name} STREQUAL "ui")
+        message("String is ui")
+        # 添加GTK相关配置
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+        include_directories(${GTK3_INCLUDE_DIRS})
+        link_libraries(${GTK3_LIBRARIES})
+    endif()
+
+    target_link_libraries(${name}test LINK_PUBLIC liteldacssdk yaml cjson base64 event event_pthreads )
     target_include_directories(${name}test PUBLIC  ${CMAKE_SOURCE_DIR}/include)
 
     find_package(SQLite3 REQUIRED)
