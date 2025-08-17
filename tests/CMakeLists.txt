@@ -72,7 +72,7 @@ foreach (name ${tests})
         link_libraries(${GTK3_LIBRARIES})
     endif()
 
-    target_link_libraries(${name}test LINK_PUBLIC liteldacssdk yaml cjson base64 event event_pthreads )
+    target_link_libraries(${name}test LINK_PUBLIC liteldacssdk yaml cjson base64 event event_pthreads gtk-3 gdk-3  gobject-2.0 glib-2.0)
     target_include_directories(${name}test PUBLIC  ${CMAKE_SOURCE_DIR}/include)
 
     find_package(SQLite3 REQUIRED)
