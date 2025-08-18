@@ -63,16 +63,7 @@ foreach (name ${tests})
 
     add_executable(${name}test ${name}_test.c)
 
-    if(${name} STREQUAL "ui")
-        message("String is ui")
-        # 添加GTK相关配置
-        find_package(PkgConfig REQUIRED)
-        pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
-        include_directories(${GTK3_INCLUDE_DIRS})
-        link_libraries(${GTK3_LIBRARIES})
-    endif()
-
-    target_link_libraries(${name}test LINK_PUBLIC liteldacssdk yaml cjson base64 event event_pthreads gtk-3 gdk-3  gobject-2.0 glib-2.0)
+    target_link_libraries(${name}test LINK_PUBLIC liteldacssdk yaml cjson base64 event event_pthreads ncurses)
     target_include_directories(${name}test PUBLIC  ${CMAKE_SOURCE_DIR}/include)
 
     find_package(SQLite3 REQUIRED)

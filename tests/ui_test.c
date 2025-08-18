@@ -1,98 +1,76 @@
-#include <gtk/gtk.h>
+#include <ncurses.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
-GtkWidget *window;
-GtkWidget *header_label;
-GtkWidget *text_view;
-GtkWidget *entry;
-GtkTextBuffer *buffer;
+#include "ld_log.h"
 
-static void on_entry_activate(GtkEntry *entry, gpointer user_data) {
-    const char *text = gtk_entry_get_text(entry);
+void print_to_window(WINDOW *win, const char *text) {
+    static int line = 0;
+    int height = getmaxy(win);
 
-    if (g_strcmp0(text, "quit") == 0) {
-        gtk_main_quit();
-        return;
+    if(line >= height-1) {
+        scroll(win);
+        line = height-2;
     }
 
-    // 添加到文本视图
-    GtkTextIter iter;
-    gtk_text_buffer_get_end_iter(buffer, &iter);
-
-    gchar *output = g_strdup_printf("> %s\nYou typed: %s\n", text, text);
-    gtk_text_buffer_insert(buffer, &iter, output, -1);
-    g_free(output);
-
-    // 清空输入框
-    gtk_entry_set_text(entry, "");
-
-    // 滚动到底部
-    GtkTextMark *mark = gtk_text_buffer_get_insert(buffer);
-    gtk_text_view_scroll_mark_onscreen(GTK_TEXT_VIEW(text_view), mark);
+    mvwprintw(win, line++, 0, "%s", text);
+    wrefresh(win);
 }
 
-static void activate(GtkApplication *app, gpointer user_data) {
-    // 创建主窗口
-    window = gtk_application_window_new(app);
-    gtk_window_set_title(GTK_WINDOW(window), "UI Test");
-    gtk_window_set_default_size(GTK_WINDOW(window), 600, 400);
+int main() {
+    initscr();
+    cbreak();
+    noecho();
 
-    // 创建垂直布局容器
-    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_container_add(GTK_CONTAINER(window), vbox);
+    int height, width;
+    getmaxyx(stdscr, height, width);
 
-    // 创建固定头部区域
-    header_label = gtk_label_new("hello world");
-    gtk_widget_set_size_request(header_label, -1, 60);
+    WINDOW *upper_win = newwin(height/2, width, 0, 0);
+    WINDOW *lower_win = newwin(height/2, width, height/2, 0);
 
-    // 设置头部样式
-    GtkCssProvider *provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(provider,
-        "label { background-color: #0066cc; color: white; "
-        "padding: 20px; font-size: 16px; }", -1, NULL);
+    scrollok(lower_win, TRUE);
 
-    GtkStyleContext *context = gtk_widget_get_style_context(header_label);
-    gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider),
-                                   GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    mvwprintw(upper_win, height/4, (width - 11)/2, "Hello world\n");
+    wrefresh(upper_win);
 
-    gtk_box_pack_start(GTK_BOX(vbox), header_label, FALSE, FALSE, 0);
+    // 创建管道
+    int pipefd[2];
+    pipe(pipefd);
 
-    // 创建分隔线
-    GtkWidget *separator = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_box_pack_start(GTK_BOX(vbox), separator, FALSE, FALSE, 0);
+    if(fork() == 0) {
+        // 子进程：重定向stdout到管道并执行printf
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
 
-    // 创建滚动窗口和文本视图
-    GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled),
-                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+        // 现在可以直接使用printf
+        for(int i = 1; i <= 10; i++) {
+            log_warn("Printf line %d: Hello from child process", i);
+            // fflush(stdout);
+            sleep(1);
+        }
+        exit(0);
+    } else {
+        // 父进程：从管道读取并显示
+        close(pipefd[1]);
+        FILE *pipe_read = fdopen(pipefd[0], "r");
 
-    text_view = gtk_text_view_new();
-    gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
-    buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+        char buffer[256];
+        while(fgets(buffer, sizeof(buffer), pipe_read)) {
+            print_to_window(lower_win, buffer);
+        }
 
-    // 设置初始文本
-    gtk_text_buffer_set_text(buffer, "Welcome! Type 'quit' to exit.\n", -1);
+        fclose(pipe_read);
+        wait(NULL);
+    }
 
-    gtk_container_add(GTK_CONTAINER(scrolled), text_view);
-    gtk_box_pack_start(GTK_BOX(vbox), scrolled, TRUE, TRUE, 0);
+    getch();
 
-    // 创建输入框
-    entry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entry), "Enter command...");
-    g_signal_connect(entry, "activate", G_CALLBACK(on_entry_activate), NULL);
-    gtk_box_pack_start(GTK_BOX(vbox), entry, FALSE, FALSE, 5);
+    delwin(upper_win);
+    delwin(lower_win);
+    endwin();
 
-    gtk_widget_show_all(window);
-    gtk_widget_grab_focus(entry);
-}
-
-int main(int argc, char **argv) {
-    GtkApplication *app;
-    int status;
-
-    app = gtk_application_new("com.example.uitest", G_APPLICATION_FLAGS_NONE);
-    g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
-    status = g_application_run(G_APPLICATION(app), argc, argv);
-    g_object_unref(app);
-
-    return status;
+    return 0;
 }

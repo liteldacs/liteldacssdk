@@ -330,7 +330,7 @@ bool pb_in_mac(pb_stream *ins, size_t mac_len, KEY_HANDLE key_med, verify_hmac_f
         log_error("MAC verify failed!");
         return FALSE;
     } else {
-        log_debug("MAC verify succeed!");
+        // log_debug("MAC verify succeed!");
         ins->cur += mac_len;
         return TRUE;
     }
