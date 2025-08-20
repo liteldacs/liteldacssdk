@@ -160,15 +160,19 @@ bool in_struct(void *struct_ptr, struct_desc_t *sd, pb_stream *ins, pb_stream *o
                         case 2:
                         case 3:
                             *(uint8_t *) outp = n;
+                            outp += sizeof(uint8_t);
                             break;
                         case 4:
                             *(uint16_t *) outp = n;
+                            outp += sizeof(uint16_t);
                             break;
                         case 5:
                             *(uint32_t *) outp = n;
+                            outp += sizeof(uint32_t);
                             break;
                         case 6:
                             *(uint64_t *) outp = n;
+                            outp += sizeof(uint64_t);
                             break;
                         default:
                             //TODO: 错误处理
@@ -206,7 +210,7 @@ bool in_struct(void *struct_ptr, struct_desc_t *sd, pb_stream *ins, pb_stream *o
                             break;
                     }
 
-                    outp += ((fp->size - 1) / BITS_PER_BYTE) + 1;
+                    // outp += ((fp->size - 1) / BITS_PER_BYTE) + 1;
                     *bit_size += i;
                     break;
                 }
@@ -391,15 +395,19 @@ bool out_struct(const void *struct_ptr, struct_desc_t *sd, pb_stream *outs, pb_s
                         case 2:
                         case 3:
                             n = *(const uint8_t *) inp;
+                            inp += sizeof(uint8_t);
                             break;
                         case 4:
                             n = *(const uint16_t *) inp;
+                            inp += sizeof(uint16_t);
                             break;
                         case 5:
                             n = *(const uint32_t *) inp;
+                            inp += sizeof(uint32_t);
                             break;
                         case 6:
                             n = *(const uint64_t *) inp;
+                            inp += sizeof(uint64_t);
                             break;
                         default:
                             //应有错误处理
@@ -443,7 +451,7 @@ bool out_struct(const void *struct_ptr, struct_desc_t *sd, pb_stream *outs, pb_s
                     }
 
                     append_bits(&to_shift, &n, &cur);
-                    inp += ((fp->size - 1) / BITS_PER_BYTE) + 1;
+                    // inp += ((fp->size - 1) / BITS_PER_BYTE) + 1;
                     *bit_size += i;
                     break;
                 }

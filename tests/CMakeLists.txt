@@ -42,6 +42,8 @@ set(tests
 #        str
 #        yaml
 #        ipv6pkt
+        multiprocess
+        ipv6
 )
 
 #cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
