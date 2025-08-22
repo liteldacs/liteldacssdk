@@ -15,7 +15,6 @@ static int connection_register(basic_conn_t *bc, int64_t factor);
 
 static void connection_set_nodelay(int fd);
 
-static void connection_close(basic_conn_t *bc);
 
 static void connecion_set_reactivated(basic_conn_t *bc);
 
@@ -67,7 +66,7 @@ static int make_std_tcp_connect(struct sockaddr_in *to_conn_addr, char *addr, in
     while (i--) {
         log_info("Trying to connect to remote `%s:%d` for %d time(s).", addr, remote_port, RECONNECT - i);
         if (connect(fd, (struct sockaddr *) to_conn_addr, sizeof(struct sockaddr_in)) >= 0) {
-            log_info("Connected");
+            log_info("Connected %d", fd);
             return fd;
         }
         sleep(1);
@@ -720,9 +719,24 @@ void *net_setup(void *args) {
             struct epoll_event *curr_event = net_ctx->epoll_events + i;
             int fd = *((int *) curr_event->data.ptr);
             if (fd == net_ctx->server_fd) {
-                // gs_conn_accept(net_opt); /* never happened in GS */
                 net_ctx->accept_handler(net_ctx);
-                // free(curr_event->data.ptr);
+                while (1) {
+                    int client_fd = accept(net_ctx->server_fd, NULL, NULL);
+                    if (client_fd < 0) {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                            break;  // 没有更多连接
+                        }
+                        if (errno != EINTR) {
+                            log_error("accept error: %s", strerror(errno));
+                            break;
+                        }
+                        continue;  // EINTR, 重试
+                    }
+
+                    // 处理新连接
+
+                    log_warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                }
             } else {
                 basic_conn_t *bc = curr_event->data.ptr;
                 int status;

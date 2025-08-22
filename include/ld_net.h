@@ -128,4 +128,6 @@ void net_epoll_in(int e_fd, basic_conn_t *bc);
 
 uint16_t get_port(basic_conn_t *bc);
 
+void connection_close(basic_conn_t *bc);
+
 #endif //TEST_CLIENT_CLIENT_H
