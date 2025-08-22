@@ -85,6 +85,8 @@ void handle_value(config_t *config, parse_context *ctx, yaml_parser_t *parser, y
         config->UA = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(ctx->current_key, "GS-SAC")) {
         config->GS_SAC = atoi((char *) event->data.scalar.value);
+    } else if (!strcmp(ctx->current_key, "AS-SAC")) {
+        config->AS_SAC = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(ctx->current_key, "port")) {
         config->port = atoi((char *) event->data.scalar.value);
     } else if (!strcmp(ctx->current_key, "ipv6_address")) {

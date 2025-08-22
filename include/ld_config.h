@@ -54,9 +54,6 @@ typedef struct config_s {
 
     /* role tags */
     uint32_t UA;
-    uint8_t ua_gsc; /* temporary, currently for gs */
-    uint16_t GS_SAC;
-
     /* security configurations */
     uint8_t sec_mac_len;
     uint8_t sec_auth_id;
@@ -65,6 +62,10 @@ typedef struct config_s {
 
     /* log */
     char log_dir[PATH_MAX];
+
+    /* direct snp */
+    uint16_t GS_SAC;
+    uint16_t AS_SAC;
 } config_t;
 
 extern config_t config;
