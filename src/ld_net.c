@@ -719,9 +719,11 @@ void *net_setup(void *args) {
             struct epoll_event *curr_event = net_ctx->epoll_events + i;
             int fd = *((int *) curr_event->data.ptr);
             if (fd == net_ctx->server_fd) {
-                net_ctx->accept_handler(net_ctx);
                 while (1) {
-                    int client_fd = accept(net_ctx->server_fd, NULL, NULL);
+                    struct sockaddr_storage saddr;
+                    socklen_t saddrlen = sizeof(struct sockaddr_storage);
+                    int client_fd = accept(net_ctx->server_fd, (struct sockaddr *)&saddr, &saddrlen);
+
                     if (client_fd < 0) {
                         if (errno == EAGAIN || errno == EWOULDBLOCK) {
                             break;  // 没有更多连接
@@ -734,8 +736,7 @@ void *net_setup(void *args) {
                     }
 
                     // 处理新连接
-
-                    log_warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    net_ctx->accept_handler(net_ctx, client_fd, &saddr);
                 }
             } else {
                 basic_conn_t *bc = curr_event->data.ptr;
@@ -824,20 +825,34 @@ static void set_basic_conn_addr(uint8_t *start, void *addr) {
     }
 }
 
+bool init_basic_conn_server(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role, int fd, struct sockaddr_storage *saddr) {
+    bc->rp = get_role_propt(socket_role);
+    bc->fd = fd;
+    if (bc->fd == ERROR || bc->fd < 0) {
+        log_error("Failed to create connection fd");
+        return FALSE;
+    }
+    bc->opt = ctx;
 
-bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role) {
+    memcpy(&bc->saddr, saddr, sizeof(struct sockaddr_storage));
+
+    return init_basic_conn(bc);
+}
+
+bool init_basic_conn_client(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role ) {
+    bc->rp = get_role_propt(socket_role);
+    bc->fd = bc->rp->handler(bc);
+    bc->opt = ctx;
+    return init_basic_conn(bc);
+}
+
+bool init_basic_conn(basic_conn_t *bc) {
     do {
         // 清零整个结构体
 
-        bc->fd = DEFAULT_FD;
-        bc->opt = ctx;
-        bc->rp = get_role_propt(socket_role);
-        bc->fd = bc->rp->handler(bc);
-
-        if (bc->fd == ERROR || bc->fd < 0) {
-            log_error("Failed to create connection fd");
-            break;
-        }
+        // bc->fd = DEFAULT_FD;
+        // bc->rp = get_role_propt(socket_role);
+        // bc->fd = bc->rp->handler(bc);
 
         ABORT_ON(bc->opt->epoll_fd == 0 || bc->opt->epoll_fd == ERROR, "illegal epoll fd");
 

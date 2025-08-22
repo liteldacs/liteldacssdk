@@ -54,7 +54,7 @@ typedef struct net_ctx_s {
 
     void *(*conn_handler)(struct net_ctx_s *ctx, char *remote_addr, int remote_port, int local_port);
 
-    l_err (*accept_handler)(struct net_ctx_s *);
+    l_err (*accept_handler)(struct net_ctx_s *, int fd, struct sockaddr_storage *saddr);
 
     // struct event_base *base ;
     // struct evconnlistener *listener;
@@ -103,7 +103,11 @@ typedef struct basic_conn_s {
 
 } basic_conn_t;
 
-bool init_basic_conn(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role);
+bool init_basic_conn_server(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role, int fd, struct sockaddr_storage *saddr);
+
+bool init_basic_conn_client(basic_conn_t *bc, net_ctx_t *ctx, sock_roles socket_role );
+
+bool init_basic_conn(basic_conn_t *bc);
 
 const struct role_propt *get_role_propt(int s_r);
 

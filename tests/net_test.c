@@ -226,7 +226,7 @@ static void* server_conn_handler(net_ctx_t *ctx, char *remote_addr, int remote_p
     bc->remote_port = remote_port;
     bc->local_port = local_port;
 
-    if (!init_basic_conn(bc, ctx, LD_TCP_CLIENT)) {
+    if (!init_basic_conn_client(bc, ctx, LD_TCP_CLIENT)) {
         free(bc->remote_addr);
         free(bc);
         return NULL;
@@ -236,11 +236,11 @@ static void* server_conn_handler(net_ctx_t *ctx, char *remote_addr, int remote_p
 }
 
 // 服务器接受处理器
-static l_err server_accept_handler(net_ctx_t *ctx) {
+static l_err server_accept_handler(net_ctx_t *ctx, int fd, struct sockaddr_storage *saddr) {
     basic_conn_t *bc = malloc(sizeof(basic_conn_t));
     memset(bc, 0, sizeof(basic_conn_t));
 
-    if (!init_basic_conn(bc, ctx, LD_TCP_SERVER)) {
+    if (!init_basic_conn_server(bc, ctx, LD_TCP_SERVER, fd,saddr )) {
         free(bc);
         return LD_ERR_INTERNAL;
     }
@@ -258,7 +258,7 @@ static void* client_conn_handler(net_ctx_t *ctx, char *remote_addr, int remote_p
     bc->remote_port = remote_port;
     bc->local_port = local_port;
 
-    if (!init_basic_conn(bc, ctx, LD_TCP_CLIENT)) {
+    if (!init_basic_conn_client(bc, ctx, LD_TCP_CLIENT)) {
         free(bc->remote_addr);
         free(bc);
         return NULL;
