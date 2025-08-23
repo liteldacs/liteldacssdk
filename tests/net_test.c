@@ -522,7 +522,7 @@ static int run_stress_test(int num_clients) {
 
 // 主函数
 int main(int argc, char *argv[]) {
-    int num_clients = 5;
+    int num_clients = 100;
 
     // 解析命令行参数
     if (argc > 1) {

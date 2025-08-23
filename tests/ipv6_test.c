@@ -51,13 +51,12 @@ int main() {
     };
 
     struct in6_addr addr;
-    inet_pton(AF_INET6, "::1", &addr);
+    inet_pton(AF_INET6, "3::1", &addr);
 
     CLONE_TO_CHUNK(*v6.src_address, addr.__in6_u.__u6_addr8, 16);
     CLONE_TO_CHUNK(*v6.dst_address, addr.__in6_u.__u6_addr8, 16);
 
     CLONE_TO_CHUNK(*v6.data, "hello world", 11);
-    //
     buffer_t *buf = gen_pdu(&v6, &tcp_v6_desc, "TCP V6");
 
     log_buf(LOG_INFO, "IPV6", buf->ptr, buf->len);
