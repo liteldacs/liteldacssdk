@@ -25,10 +25,10 @@
 #define TEST_PORT 8888
 #define TEST_HOST "127.0.0.1"
 #define MAX_CLIENTS 100
-#define TEST_DURATION_SEC 10
+#define TEST_DURATION_SEC 100
 #define PACKET_SIZE_MIN 64
 #define PACKET_SIZE_MAX 8192
-#define PACKETS_PER_CLIENT 1000
+#define PACKETS_PER_CLIENT 2000
 
 // 统计信息
 typedef struct {

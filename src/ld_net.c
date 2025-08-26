@@ -599,6 +599,7 @@ static int write_packet(basic_conn_t *bc) {
                 return AGAIN;
             }
         } else if (n == 0) {
+                // free_buffer(bc->current_write_buffer);
             return OK;
         } else {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
