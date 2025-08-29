@@ -281,7 +281,9 @@ bool in_struct(void *struct_ptr, struct_desc_t *sd, pb_stream *ins, pb_stream *o
                     ins->pld_fld = cur;
                     size_t slen = pdu_len - (cur - ins->start) - (*(size_t *) fp->desc >> 3);
 
-                    buffer_t *b = (buffer_t *) *(uint64_t *) outp;
+                    // buffer_t *b = (buffer_t *) *(uint64_t *) outp;
+                    buffer_t *b = init_buffer_unptr();
+                    *(buffer_t **) (uint64_t *) outp = b;
                     uint8_t temp[MAX_INPUT_BUFFER_SIZE] = {0};
 
                     detach_str(&cur, bit_size, temp, slen);
