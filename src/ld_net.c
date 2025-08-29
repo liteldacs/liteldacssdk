@@ -536,6 +536,33 @@ static int read_packet(int fd, basic_conn_t *bc) {
 // }
 static int write_packet(basic_conn_t *bc) {
     // 如果有未完成的发送缓冲区，先处理它
+    // if (bc->current_write_buffer) {
+    //     size_t remaining = bc->current_write_buffer->len - bc->current_write_offset;
+    //     ssize_t n = write(bc->fd,
+    //                      (char*)bc->current_write_buffer->ptr + bc->current_write_offset,
+    //                      remaining);
+    //
+    //     if (n > 0) {
+    //         bc->current_write_offset += n;
+    //         if (bc->current_write_offset >= bc->current_write_buffer->len) {
+    //             // 当前缓冲区发送完成
+    //             free_buffer(bc->current_write_buffer);
+    //             bc->current_write_buffer = NULL;
+    //             bc->current_write_offset = 0;
+    //         } else {
+    //             // 还有数据未发送完
+    //             return AGAIN;
+    //         }
+    //     } else if (n == 0) {
+    //         return OK;
+    //     } else {
+    //         if (errno == EAGAIN || errno == EWOULDBLOCK) {
+    //             return AGAIN;
+    //         }
+    //         log_error("Write error: %s", strerror(errno));
+    //         return ERROR;
+    //     }
+    // }
     if (bc->current_write_buffer) {
         size_t remaining = bc->current_write_buffer->len - bc->current_write_offset;
         ssize_t n = write(bc->fd,
@@ -545,25 +572,36 @@ static int write_packet(basic_conn_t *bc) {
         if (n > 0) {
             bc->current_write_offset += n;
             if (bc->current_write_offset >= bc->current_write_buffer->len) {
-                // 当前缓冲区发送完成
                 free_buffer(bc->current_write_buffer);
                 bc->current_write_buffer = NULL;
                 bc->current_write_offset = 0;
             } else {
-                // 还有数据未发送完
-                return AGAIN;
+                return AGAIN;  // 还有数据未发送
             }
         } else if (n == 0) {
-            return OK;
+            // 对于非阻塞socket，write返回0是异常情况
+            log_error("Write returned 0, connection may be closed");
+            free_buffer(bc->current_write_buffer);
+            bc->current_write_buffer = NULL;
+            bc->current_write_offset = 0;
+            return ERROR;  // 改为返回ERROR
         } else {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 return AGAIN;
+            } else if (errno == EINTR) {
+                // 被信号中断，重试
+                return AGAIN;
+            } else if (errno == EPIPE || errno == ECONNRESET) {
+                // 连接已断开
+                log_error("Connection broken: %s", strerror(errno));
+                free_buffer(bc->current_write_buffer);
+                bc->current_write_buffer = NULL;
+                return ERROR;
             }
             log_error("Write error: %s", strerror(errno));
             return ERROR;
         }
     }
-
     // 处理队列中的新数据包
     while (ld_aqueue_count(bc->write_pkts) > 0) {
         buffer_t *b = ld_aqueue_dequeue(bc->write_pkts);
@@ -720,6 +758,7 @@ void *net_setup(void *args) {
             struct epoll_event *curr_event = net_ctx->epoll_events + i;
             int fd = *((int *) curr_event->data.ptr);
             if (fd == net_ctx->server_fd) {
+                // 循环处理accept 直到没有
                 while (1) {
                     struct sockaddr_storage saddr;
                     socklen_t saddrlen = sizeof(struct sockaddr_storage);
@@ -789,14 +828,25 @@ int net_epoll_add(int e_fd, basic_conn_t *bc, uint32_t events,
     return core_epoll_add(e_fd, bc->fd, pev);
 }
 
+// void net_epoll_out(int e_fd, basic_conn_t *bc) {
+//     struct epoll_event ev;
+//     ev.events = EPOLLOUT | EPOLLET;
+//     ev.data.ptr = bc;
+//     if (epoll_ctl(e_fd, EPOLL_CTL_MOD, bc->fd, &ev) == 0) {
+//         bc->event.events = ev.events;
+//     } else {
+//         perror("epoll_ctl(OUT)");
+//     }
+// }
+
 void net_epoll_out(int e_fd, basic_conn_t *bc) {
     struct epoll_event ev;
-    ev.events = EPOLLOUT | EPOLLET;
+    ev.events = EPOLLOUT | EPOLLIN | EPOLLET;  // 同时监听读写事件
     ev.data.ptr = bc;
     if (epoll_ctl(e_fd, EPOLL_CTL_MOD, bc->fd, &ev) == 0) {
         bc->event.events = ev.events;
     } else {
-        perror("epoll_ctl(OUT)");
+        log_error("Failed to modify epoll: %s", strerror(errno));
     }
 }
 
