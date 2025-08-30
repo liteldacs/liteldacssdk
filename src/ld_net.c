@@ -293,10 +293,14 @@ l_err defalut_send_pkt(basic_conn_t *bc, buffer_t *in_buf, l_err (*mid_func)(buf
     }
     cat_to_buffer(buf, in_buf->ptr, in_buf->len);
 
-    ld_aqueue_enqueue(bc->write_pkts, buf);
+    // ld_aqueue_enqueue(bc->write_pkts, buf);
+    lfqueue_put(bc->write_pkts, buf);
 
     // 只有在当前没有待发送数据时才切换到EPOLLOUT
-    if (!bc->current_write_buffer && ld_aqueue_count(bc->write_pkts) == 1) {
+    // if (!bc->current_write_buffer && ld_aqueue_count(bc->write_pkts) == 1) {
+    //     net_epoll_out(bc->opt->epoll_fd, bc);
+    // }
+    if (!bc->current_write_buffer && lfqueue_size(bc->write_pkts) == 1) {
         net_epoll_out(bc->opt->epoll_fd, bc);
     }
     // 如果已经在发送过程中，则不需要重复设置EPOLLOUT
@@ -603,10 +607,12 @@ static int write_packet(basic_conn_t *bc) {
         }
     }
     // 处理队列中的新数据包
-    while (ld_aqueue_count(bc->write_pkts) > 0) {
-        buffer_t *b = ld_aqueue_dequeue(bc->write_pkts);
+    while (lfqueue_size(bc->write_pkts) > 0) {
+        // buffer_t *b = ld_aqueue_dequeue(bc->write_pkts);
+        buffer_t *b = lfqueue_deq(bc->write_pkts);
+
         if (!b) {
-            log_error("Send buffer null: %d", ld_aqueue_count(bc->write_pkts));
+            log_error("Send buffer null: %d", lfqueue_size(bc->write_pkts));
             continue;
         }
 
@@ -686,7 +692,7 @@ static int response_send_buffer(basic_conn_t *bc) {
     switch (status) {
         case OK:
             // 检查是否还有待发送数据
-            if (ld_aqueue_count(bc->write_pkts) == 0 && !bc->current_write_buffer) {
+            if (lfqueue_size(bc->write_pkts) == 0 && !bc->current_write_buffer) {
                 // 所有数据发送完成
                 bc->trans_done = TRUE;
                 net_epoll_in(bc->opt->epoll_fd, bc);
@@ -922,7 +928,7 @@ bool init_basic_conn(basic_conn_t *bc) {
         connection_set_nodelay(bc->fd);
 
         // 初始化队列和缓冲区
-        bc->write_pkts = ld_aqueue_create(NULL, 1024);
+        bc->write_pkts = lfqueue_init();
         if (!bc->write_pkts) {
             log_error("Failed to create write queue");
             break;
@@ -1039,10 +1045,10 @@ void connection_close(basic_conn_t *bc) {
     // 清理发送队列
     if (bc->write_pkts) {
         buffer_t *buf;
-        while ((buf = ld_aqueue_dequeue(bc->write_pkts)) != NULL) {
+        while ((buf = lfqueue_deq(bc->write_pkts)) != NULL) {
             free_buffer(buf);
         }
-        ld_aqueue_destroy(bc->write_pkts);
+        lfqueue_destroy(bc->write_pkts);
         bc->write_pkts = NULL;
     }
 

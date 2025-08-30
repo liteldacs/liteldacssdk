@@ -12,7 +12,9 @@
 #include <passert.h>
 #include <ld_santilizer.h>
 
-#include "ld_aqueue.h"
+#include "ld_mqueue.h"
+
+// #include "ld_aqueue.h"
 
 
 #define IPV6_ADDRLEN 128
@@ -75,8 +77,8 @@ typedef struct basic_conn_s {
     struct epoll_event event; /* epoll event */
     struct sockaddr_storage saddr; /* IP socket address */
     buffer_t *read_pkt; /* Receive packet */
-    // lfqueue_t *write_pkts;
-    ld_aqueue_t *write_pkts;
+    lfqueue_t *write_pkts;
+    // ld_aqueue_t *write_pkts;
     bool trans_done;
     const struct role_propt *rp;
     struct net_ctx_s *opt;
