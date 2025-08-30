@@ -94,7 +94,6 @@ void handle_value(config_t *config, parse_context *ctx, yaml_parser_t *parser, y
             zero(config->addr);
             strcpy(config->addr, (char *) event->data.scalar.value);
         }
-        //config->addr = (char *)event->data.scalar.value;
     }  else if (!strcmp(ctx->current_key, "gsnf_local_port")) {
         config->gsnf_local_port = atoi((char *) event->data.scalar.value);
     }  else if (!strcmp(ctx->current_key, "gsnf_remote_port")) {
