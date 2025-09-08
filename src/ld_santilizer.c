@@ -618,7 +618,7 @@ size_t sizeof_struct(field_desc *fd) {
 }
 
 buffer_t *gen_pdu(void *objs, struct_desc_t *desc, const char *name) {
-    uint8_t out_stream[512] = {0};
+    uint8_t out_stream[4096] = {0};
     pb_stream pbs;
     init_pbs(&pbs, out_stream, sizeof(out_stream), name);
     out_struct(objs, desc, &pbs, NULL);

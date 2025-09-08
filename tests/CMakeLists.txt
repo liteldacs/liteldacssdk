@@ -45,6 +45,7 @@ set(tests
         multiprocess
         ipv6
         net
+        env
 )
 
 #cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
