@@ -281,6 +281,7 @@ l_err log_init(int level, const char *log_dir, const char *role_str) {
 
     /* check the basic log directory */
     if (check_path(log_dir)) {
+        log_error("check path failed: %s %d", log_dir, strlen(log_dir));
         return LD_ERR_INTERNAL;
     }
 

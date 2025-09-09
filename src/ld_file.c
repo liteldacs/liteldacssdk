@@ -19,6 +19,7 @@ l_err check_path(const char *dir_path) {
     if (errno == ENOENT) {
         if (mkdir(dir_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0)    return LD_OK; // 目录创建成功，返回成功
 
+
         perror("mkdir");
         return LD_ERR_WRONG_PATH; // 创建目录失败，返回失败
     }

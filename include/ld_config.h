@@ -32,6 +32,7 @@ typedef struct config_s {
     bool is_beihang;
     bool is_e304;
     bool direct;
+    int pipe_fd;
 
     /* net */
     uint8_t ip_ver;
