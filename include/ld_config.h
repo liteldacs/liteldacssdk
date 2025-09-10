@@ -33,6 +33,7 @@ typedef struct config_s {
     bool is_e304;
     bool direct;
     int pipe_fd;
+    FILE *pipe_file;
 
     /* net */
     uint8_t ip_ver;
