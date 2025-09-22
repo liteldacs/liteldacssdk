@@ -218,7 +218,7 @@ l_err reregister_gtimer(ld_gtimer_t *gtimer) {
     if (handler->th == 0)   return LD_ERR_NULL;
     pthread_cancel(handler->th);
     pthread_join(handler->th, NULL);
-    log_warn("================================================");
+    // log_warn("================================================");
     if (gtimer_timerfd_del(handler) != LD_OK || update_gtimer_basetime(handler, &gtimer->spec) != LD_OK) {
         return LD_ERR_INTERNAL;
     }
