@@ -35,6 +35,6 @@ void unmarshel_json(const cJSON *root, void *struct_ptr, json_tmpl_desc_t *tmpl_
 
 buffer_t * get_json_buffer(int type, cJSON *node);
 
-void get_json_str(void *ptr, json_tmpl_desc_t *desc, char **j_str);
+l_err get_json_str(void *ptr, json_tmpl_desc_t *desc, char **j_str);
 
 #endif //LDACS_SIM_UTIL_JSON_H

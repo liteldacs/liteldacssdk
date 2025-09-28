@@ -54,6 +54,10 @@ typedef struct config_s {
     uint16_t http_port; /* listen port */
     bool auto_auth;
 
+    /* dashboard */
+    bool use_dashboard;
+    uint16_t dashboard_port;
+
     /* role tags */
     uint32_t UA;
     /* security configurations */
@@ -68,6 +72,12 @@ typedef struct config_s {
     /* direct snp */
     uint16_t GS_SAC;
     uint16_t AS_SAC;
+
+    /* path */
+    double start_longitude;
+    double start_latitude;
+    double refer_longitude;
+    double refer_latitude;
 } config_t;
 
 extern config_t config;

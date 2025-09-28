@@ -120,7 +120,15 @@ void handle_value(config_t *config, parse_context *ctx, yaml_parser_t *parser, y
         config->init_fl_freq = atof((char *) event->data.scalar.value);
     } else if (!strcmp(ctx->current_key, "init_rl_freq")) {
         config->init_rl_freq = atof((char *) event->data.scalar.value);
-    } else if (!strcmp(ctx->current_key, "peer_addr")) {
+    }  else if (!strcmp(ctx->current_key, "start-longitude")) {
+        config->start_longitude = strtof((char *) event->data.scalar.value, NULL);
+    }   else if (!strcmp(ctx->current_key, "start-latitude")) {
+        config->start_latitude = strtof((char *) event->data.scalar.value, NULL);
+    }   else if (!strcmp(ctx->current_key, "refer-longitude")) {
+        config->refer_longitude = strtof((char *) event->data.scalar.value, NULL);
+    }   else if (!strcmp(ctx->current_key, "refer-latitude")) {
+        config->refer_latitude = strtof((char *) event->data.scalar.value, NULL);
+    }else if (!strcmp(ctx->current_key, "peer_addr")) {
         if (ctx->seq_is_peers){
             strcpy(config->peers[config->peer_count]->peer_addr, (char *)event->data.scalar.value);
         }

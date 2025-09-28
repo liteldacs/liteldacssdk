@@ -8,6 +8,9 @@
 #include "../global/ldacs_sim.h"
 #include "ld_buffer.h"
 #include "ld_util_def.h"
+#include <math.h>
+
+
 
 void get_time(char *time_str, enum TIME_MOD t_mod, enum TIME_PREC t_pesc);
 
@@ -24,6 +27,8 @@ static char *get_ua_str(uint32_t value, char *str) {
 }
 
 int ld_split(const char *str, char ***argv);
+
+double calculate_distance(const double pos[2], const double center[2]);
 
 
 

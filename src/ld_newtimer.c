@@ -217,8 +217,17 @@ l_err reregister_gtimer(ld_gtimer_t *gtimer) {
     ld_gtimer_handler_t *handler = &gtimer->handler;
     if (handler->th == 0)   return LD_ERR_NULL;
     pthread_cancel(handler->th);
-    pthread_join(handler->th, NULL);
-    // log_warn("================================================");
+    // 等待线程结束，但添加超时机制
+    // int result = pthread_join(handler->th, NULL);
+    // if (result != 0) {
+    //     log_warn("pthread_join failed or timed out: %d", result);
+    //     // 如果连接失败，继续执行重置逻辑而不是直接返回错误
+    // }
+
+    usleep(5000);
+
+    handler->th = 0;
+
     if (gtimer_timerfd_del(handler) != LD_OK || update_gtimer_basetime(handler, &gtimer->spec) != LD_OK) {
         return LD_ERR_INTERNAL;
     }

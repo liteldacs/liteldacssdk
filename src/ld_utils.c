@@ -87,3 +87,31 @@ int ld_split(const char *str, char ***argv) {
     (*argv)[index] = NULL; // 数组以NULL结尾
     return count;
 }
+
+
+#define EARTH_RADIUS 6371.0 // 地球半径（千米）
+/**
+ * 使用Haversine公式计算地球上两点之间的距离
+ * @param pos 经纬度数组 [经度, 纬度]
+ * @param center 中心点经纬度数组 [经度, 纬度]
+ * @return 两点间距离（千米）
+ */
+double calculate_distance(const double pos[2], const double center[2]) {
+    double R = EARTH_RADIUS; // 地球半径（千米）
+
+    // 转换为弧度
+    double phi1 = pos[1] * M_PI / 180.0;
+    double phi2 = center[1] * M_PI / 180.0;
+    double delta_phi = (center[1] - pos[1]) * M_PI / 180.0;
+    double delta_lambda = (center[0] - pos[0]) * M_PI / 180.0;
+
+    // Haversine公式
+    double a = sin(delta_phi/2) * sin(delta_phi/2) +
+               cos(phi1) * cos(phi2) *
+               sin(delta_lambda/2) * sin(delta_lambda/2);
+    double c = 2 * atan2(sqrt(a), sqrt(1-a));
+
+    // 距离（千米）
+    double distance = R * c;
+    return distance;
+}

@@ -56,6 +56,7 @@ cJSON *marshel_json(const void *struct_ptr, json_tmpl_desc_t *tmpl_desc) {
                     n = u64_double_converter((uint64_t) n);
                 }
 
+
                 cJSON_AddNumberToObject(init_obj, tmpl->key, n);
                 break;
             }
@@ -201,10 +202,15 @@ json_tmpl_t *get_desc_by_key(json_tmpl_desc_t *desc, const char *key) {
     return NULL;
 }
 
-void get_json_str(void *ptr, json_tmpl_desc_t *desc, char **j_str) {
+l_err get_json_str(void *ptr, json_tmpl_desc_t *desc, char **j_str) {
+    if (!desc) {
+        log_warn("Description is NULL");
+        return LD_ERR_INTERNAL;
+    }
     cJSON *data_json = marshel_json(ptr, desc);
     *j_str = cJSON_PrintUnformatted(data_json);
     cJSON_Delete(data_json);
+    return LD_OK;
 }
 
 buffer_t * get_json_buffer(int type, cJSON *node) {

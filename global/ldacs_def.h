@@ -109,11 +109,7 @@ typedef enum {
 #define MAX_OUTPUT_BUFFER_SIZE 8192
 #define MAX_JSON_ENBASE64  3296  //the biggest length of phy_sdus (1) QPSK with 1/2 rate (9 sdus): 1092 bytes; (2) 64QAM with 3/4 rate (6 sdus): 3296 bytes
 
-
-
 #define MAX_JSON_DEBASE64  2472  //the biggest length of phy_sdus (1) QPSK with 1/2 rate (9 sdus): 819 bytes; (2) 64QAM with 3/4 rate (6 sdus): 2472 bytes
-
-
 
 #define ERROR (-1)
 #define END (0)
@@ -158,6 +154,8 @@ typedef enum {
 #define KEY_HANDLE void *
 
 typedef const char *err_t; /* error message, or NULL for success */
+
+#define GS_COVERAGE 307
 
 
 #endif //LDACS_DEF_H

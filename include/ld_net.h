@@ -34,7 +34,6 @@ struct role_propt {
 
 typedef l_err (*recv_handler)(basic_conn_t *);
 
-typedef l_err (*recv_handler2)(buffer_t *);
 
 typedef struct net_ctx_s {
     char name[32];
