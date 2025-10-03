@@ -7,7 +7,7 @@
 #include "ld_log.h"
 
 #define CHILD_EXEC_PATH "./ldacs-combine" // 定义子进程可执行文件的路径
-#define NUM_CHILDREN 40                     // 子进程数量
+#define NUM_CHILDREN 39                     // 子进程数量
 
 typedef int pipe_fd_t[2];
 
@@ -24,7 +24,7 @@ static void sigint_handler(int signum) {
     }
     sleep(1);
 
-    log_info("40 as simulator(PID: %u) exit...", getpid());
+    log_info("multiple as simulator(PID: %u) exit...", getpid());
     exit(0);
 }
 
@@ -77,7 +77,7 @@ int main() {
 
             // 为不同子进程使用不同的配置文件
             char config_path[64];
-            snprintf(config_path, sizeof(config_path), "../../config/ldacs_config_as_%d.yaml", i+1);
+            snprintf(config_path, sizeof(config_path), "../../config/ldacs_config_as_%d.yaml", i+2);
 
             execl(CHILD_EXEC_PATH, "ldacs-combine", "-c", config_path, "-D", "-E", "-f", write_fd_str, (char *)NULL);
 
