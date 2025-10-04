@@ -293,14 +293,11 @@ l_err defalut_send_pkt(basic_conn_t *bc, buffer_t *in_buf, l_err (*mid_func)(buf
     }
     cat_to_buffer(buf, in_buf->ptr, in_buf->len);
 
-    // ld_aqueue_enqueue(bc->write_pkts, buf);
+    // 先添加到队列
     lfqueue_put(bc->write_pkts, buf);
-
-    // 只有在当前没有待发送数据时才切换到EPOLLOUT
-    // if (!bc->current_write_buffer && ld_aqueue_count(bc->write_pkts) == 1) {
-    //     net_epoll_out(bc->opt->epoll_fd, bc);
-    // }
-    if (!bc->current_write_buffer && lfqueue_size(bc->write_pkts) == 1) {
+    
+    // 再检查队列状态
+    if (!bc->current_write_buffer) {
         net_epoll_out(bc->opt->epoll_fd, bc);
     }
     // 如果已经在发送过程中，则不需要重复设置EPOLLOUT
@@ -491,168 +488,102 @@ static int read_packet(int fd, basic_conn_t *bc) {
  * AGAIN: haven't sent all data
  * ERROR: error
  */
-// static int write_packet(basic_conn_t *bc) {
-//     // while (lfqueue_size(bc->write_pkts) != 0) {
-//     while (ld_aqueue_count(bc->write_pkts) > 0) {
-//         buffer_t *to_send = init_buffer_unptr();
-//         // buffer_t *b = NULL;
-//         // lfqueue_get(bc->write_pkts, (void **) &b);
-//         // lfqueue_get_wait(bc->write_pkts, (void **) &b);
-//         buffer_t *b = ld_aqueue_dequeue(bc->write_pkts);
-//         if (!b) {
-//             log_error("Send buffer null: %d %p", ld_aqueue_count(bc->write_pkts), bc->write_pkts);
-//             continue;
-//             // return ERROR;
-//         }
-//         size_t len = b->len;
-//         // 添加4字节长度头
-//         uint32_t pkt_len = htonl(len);
-//
-//         cat_to_buffer(to_send, (uint8_t *) &pkt_len, sizeof(pkt_len));
-//         cat_to_buffer(to_send, b->ptr, len);
-//
-//         size_t sent = 0;
-//         while (sent < to_send->len) {
-//             // ssize_t n = write(bc->fd, (char*)b->ptr + sent, len - sent);
-//             ssize_t n = write(bc->fd, (char *) to_send->ptr + sent, to_send->len - sent);
-//             if (n <= 0) {
-//                 if (n < 0 && errno == EAGAIN) {
-//                     // 对于非阻塞套接字，EAGAIN表示暂时无法发送更多数据
-//                     // 应该保存剩余数据并稍后重试
-//                     log_warn("ERROR");
-//                     return AGAIN;
-//                 }
-//                 // return n == 0 ? OK : ERROR;
-//                 if (n == 0) {
-//                     return OK;
-//                 } else {
-//                     log_warn("ERROR");
-//                     return ERROR;
-//                 }
-//             }
-//             sent += n;
-//         }
-//
-//         free_buffer(b);
-//         free_buffer(to_send);
-//     }
-//     return OK;
-// }
 static int write_packet(basic_conn_t *bc) {
-    // 如果有未完成的发送缓冲区，先处理它
-    // if (bc->current_write_buffer) {
-    //     size_t remaining = bc->current_write_buffer->len - bc->current_write_offset;
-    //     ssize_t n = write(bc->fd,
-    //                      (char*)bc->current_write_buffer->ptr + bc->current_write_offset,
-    //                      remaining);
-    //
-    //     if (n > 0) {
-    //         bc->current_write_offset += n;
-    //         if (bc->current_write_offset >= bc->current_write_buffer->len) {
-    //             // 当前缓冲区发送完成
-    //             free_buffer(bc->current_write_buffer);
-    //             bc->current_write_buffer = NULL;
-    //             bc->current_write_offset = 0;
-    //         } else {
-    //             // 还有数据未发送完
-    //             return AGAIN;
-    //         }
-    //     } else if (n == 0) {
-    //         return OK;
-    //     } else {
-    //         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-    //             return AGAIN;
-    //         }
-    //         log_error("Write error: %s", strerror(errno));
-    //         return ERROR;
-    //     }
-    // }
-    if (bc->current_write_buffer) {
-        size_t remaining = bc->current_write_buffer->len - bc->current_write_offset;
-        ssize_t n = write(bc->fd,
-                         (char*)bc->current_write_buffer->ptr + bc->current_write_offset,
-                         remaining);
+    // 循环处理直到没有数据或遇到EAGAIN
+    do {
+        // 如果有未完成的发送缓冲区，先处理它
+        if (bc->current_write_buffer) {
+            size_t remaining = bc->current_write_buffer->len - bc->current_write_offset;
+            ssize_t n = write(bc->fd,
+                             (char*)bc->current_write_buffer->ptr + bc->current_write_offset,
+                             remaining);
 
-        if (n > 0) {
-            bc->current_write_offset += n;
-            if (bc->current_write_offset >= bc->current_write_buffer->len) {
-                free_buffer(bc->current_write_buffer);
-                bc->current_write_buffer = NULL;
-                bc->current_write_offset = 0;
+            if (n > 0) {
+                bc->current_write_offset += n;
+                if (bc->current_write_offset >= bc->current_write_buffer->len) {
+                    // 当前缓冲区发送完成
+                    free_buffer(bc->current_write_buffer);
+                    bc->current_write_buffer = NULL;
+                    bc->current_write_offset = 0;
+                    // 继续处理队列中的下一个数据包
+                    continue;
+                } else {
+                    // 还有数据未发送完
+                    return AGAIN;
+                }
+            } else if (n == 0) {
+                // 对于非阻塞socket，write返回0是异常情况
+                log_error("Write returned 0, connection may be closed");
+                return ERROR;
             } else {
-                return AGAIN;  // 还有数据未发送
-            }
-        } else if (n == 0) {
-            // 对于非阻塞socket，write返回0是异常情况
-            log_error("Write returned 0, connection may be closed");
-            free_buffer(bc->current_write_buffer);
-            bc->current_write_buffer = NULL;
-            bc->current_write_offset = 0;
-            return ERROR;  // 改为返回ERROR
-        } else {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                return AGAIN;
-            } else if (errno == EINTR) {
-                // 被信号中断，重试
-                return AGAIN;
-            } else if (errno == EPIPE || errno == ECONNRESET) {
-                // 连接已断开
-                log_error("Connection broken: %s", strerror(errno));
-                free_buffer(bc->current_write_buffer);
-                bc->current_write_buffer = NULL;
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    return AGAIN;
+                } else if (errno == EINTR) {
+                    // 被信号中断，继续循环重试
+                    continue;
+                } else if (errno == EPIPE || errno == ECONNRESET) {
+                    // 连接已断开
+                    log_error("Connection broken: %s", strerror(errno));
+                    return ERROR;
+                }
+                log_error("Write error: %s", strerror(errno));
                 return ERROR;
             }
-            log_error("Write error: %s", strerror(errno));
-            return ERROR;
         }
-    }
-    // 处理队列中的新数据包
-    while (lfqueue_size(bc->write_pkts) > 0) {
-        // buffer_t *b = ld_aqueue_dequeue(bc->write_pkts);
-        buffer_t *b = lfqueue_deq(bc->write_pkts);
+        
+        // 处理队列中的新数据包
+        if (lfqueue_size(bc->write_pkts) > 0) {
+            buffer_t *b = lfqueue_deq(bc->write_pkts);
 
-        if (!b) {
-            log_error("Send buffer null: %d", lfqueue_size(bc->write_pkts));
-            continue;
-        }
+            if (!b) {
+                log_error("Send buffer null: %d", lfqueue_size(bc->write_pkts));
+                // 继续循环处理
+                continue;
+            }
 
-        // 创建带长度头的完整包
-        bc->current_write_buffer = init_buffer_unptr();
-        uint32_t pkt_len = htonl(b->len);
-        cat_to_buffer(bc->current_write_buffer, (uint8_t*)&pkt_len, sizeof(pkt_len));
-        cat_to_buffer(bc->current_write_buffer, b->ptr, b->len);
-        bc->current_write_offset = 0;
+            // 创建带长度头的完整包
+            bc->current_write_buffer = init_buffer_unptr();
+            uint32_t pkt_len = htonl(b->len);
+            cat_to_buffer(bc->current_write_buffer, (uint8_t*)&pkt_len, sizeof(pkt_len));
+            cat_to_buffer(bc->current_write_buffer, b->ptr, b->len);
+            bc->current_write_offset = 0;
 
-        free_buffer(b);
+            free_buffer(b);
 
-        // 尝试发送
-        size_t remaining = bc->current_write_buffer->len;
-        ssize_t n = write(bc->fd, (char*)bc->current_write_buffer->ptr, remaining);
+            // 尝试发送
+            size_t remaining = bc->current_write_buffer->len;
+            ssize_t n = write(bc->fd, (char*)bc->current_write_buffer->ptr, remaining);
 
-        if (n > 0) {
-            bc->current_write_offset += n;
-            if (bc->current_write_offset >= bc->current_write_buffer->len) {
-                // 完整发送
-                free_buffer(bc->current_write_buffer);
-                bc->current_write_buffer = NULL;
-                bc->current_write_offset = 0;
-                // 继续处理下一个包
+            if (n > 0) {
+                bc->current_write_offset += n;
+                if (bc->current_write_offset >= bc->current_write_buffer->len) {
+                    // 完整发送
+                    free_buffer(bc->current_write_buffer);
+                    bc->current_write_buffer = NULL;
+                    bc->current_write_offset = 0;
+                    // 继续处理下一个包
+                    continue;
+                } else {
+                    // 部分发送，等待下次EPOLLOUT
+                    return AGAIN;
+                }
+            } else if (n == 0) {
+                return ERROR;
             } else {
-                log_warn("====================");
-                // 部分发送，等待下次EPOLLOUT
-                return AGAIN;
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    return AGAIN;
+                } else if (errno == EINTR) {
+                    // 被信号中断，继续循环
+                    continue;
+                }
+                log_error("Write error: %s", strerror(errno));
+                return ERROR;
             }
-        } else if (n == 0) {
-                // free_buffer(bc->current_write_buffer);
-            return OK;
         } else {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                return AGAIN;
-            }
-            log_error("Write error: %s", strerror(errno));
-            return ERROR;
+            // 队列中没有更多数据
+            break;
         }
-    }
+    } while (1);
 
     return OK;
 }
@@ -699,6 +630,8 @@ static int response_send_buffer(basic_conn_t *bc) {
             } else {
                 // 还有数据要发送，保持EPOLLOUT状态
                 bc->trans_done = FALSE;
+                // 确保仍然监听EPOLLOUT事件
+                net_epoll_out(bc->opt->epoll_fd, bc);
             }
             break;
 
@@ -834,20 +767,9 @@ int net_epoll_add(int e_fd, basic_conn_t *bc, uint32_t events,
     return core_epoll_add(e_fd, bc->fd, pev);
 }
 
-// void net_epoll_out(int e_fd, basic_conn_t *bc) {
-//     struct epoll_event ev;
-//     ev.events = EPOLLOUT | EPOLLET;
-//     ev.data.ptr = bc;
-//     if (epoll_ctl(e_fd, EPOLL_CTL_MOD, bc->fd, &ev) == 0) {
-//         bc->event.events = ev.events;
-//     } else {
-//         perror("epoll_ctl(OUT)");
-//     }
-// }
-
 void net_epoll_out(int e_fd, basic_conn_t *bc) {
     struct epoll_event ev;
-    ev.events = EPOLLOUT | EPOLLIN | EPOLLET;  // 同时监听读写事件
+    ev.events = EPOLLOUT | EPOLLET;  // 只监听写事件和边缘触发
     ev.data.ptr = bc;
     if (epoll_ctl(e_fd, EPOLL_CTL_MOD, bc->fd, &ev) == 0) {
         bc->event.events = ev.events;

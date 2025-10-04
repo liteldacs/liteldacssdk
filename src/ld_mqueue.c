@@ -265,15 +265,18 @@ __lfq_recycle_free(lfqueue_t *lfqueue, lfqueue_cas_node_t *freenode) {
 static void
 __lfq_check_free(lfqueue_t *lfqueue) {
     lfq_time_t curr_time;
+    // 使用尝试获取锁的方式，避免在高负载时阻塞
     if (__LFQ_BOOL_COMPARE_AND_SWAP(&lfqueue->in_free_mode, 0, 1)) {
         lfq_get_curr_time(&curr_time);
         lfqueue_cas_node_t *rtfree = lfqueue->root_free, *nextfree;
-        while (rtfree && (rtfree != lfqueue->move_free)) {
+        int freed_count = 0; // 限制单次释放的节点数
+        while (rtfree && (rtfree != lfqueue->move_free) && freed_count < 500) { // 增加释放节点数到500
             nextfree = rtfree->nextfree;
-            if (lfq_diff_time(curr_time, rtfree->_deactivate_tm) > 2) {
-                //	printf("%p\n", rtfree);
+            // 缩短释放时间或根据负载动态调整 (从1秒减少到0.5秒)
+            if (lfq_diff_time(curr_time, rtfree->_deactivate_tm) > 0.5) {
                 lfqueue->_free(lfqueue->pl, rtfree);
                 rtfree = nextfree;
+                freed_count++;
             } else {
                 break;
             }
