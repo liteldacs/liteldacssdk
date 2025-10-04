@@ -79,7 +79,7 @@ int main() {
             char config_path[64];
             snprintf(config_path, sizeof(config_path), "../../config/ldacs_config_as_%d.yaml", i+2);
 
-            execl(CHILD_EXEC_PATH, "ldacs-combine", "-c", config_path, "-D", "-E", "-f", write_fd_str, (char *)NULL);
+            execl(CHILD_EXEC_PATH, "ldacs-combine", "-c", config_path, "-D", "-E", "-S", "-f", write_fd_str, (char *)NULL);
 
             perror("execl failed");
             // 关闭写端（虽然execl失败才会执行到这里）
