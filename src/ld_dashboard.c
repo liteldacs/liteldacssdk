@@ -135,6 +135,7 @@ const dashboard_func_define_t dashboard_func_defines[] = {
     {DASHBOARD_SEND_MULTI_DATA, NULL},
     {CN_REGISTER, &dashboard_register_cn_tmpl_desc},
     {CN_SIGNALLING, &dashboard_upload_cn_signalling_tmpl_desc},
+    {DASHBOARD_GET_CN_DATA, NULL},
 };
 
 void *dashboard_conn_connect(net_ctx_t *ctx, char *remote_addr, int remote_port, int local_port) {
