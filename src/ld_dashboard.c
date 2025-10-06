@@ -26,6 +26,12 @@ static json_tmpl_t dashboard_register_gs_tmpl[] = {
     {cJSON_Invalid, 0, NULL, NULL, NULL}
 };
 
+static json_tmpl_t dashboard_register_cn_tmpl[] = {
+    {cJSON_Number, sizeof(uint8_t), "type", "type", NULL},
+    {cJSON_Number, sizeof(uint16_t), "element", "element", NULL},
+    {cJSON_Invalid, 0, NULL, NULL, NULL}
+};
+
 static json_tmpl_t dashboard_switch_as_tmpl[] = {
     {cJSON_Number, sizeof(uint32_t), "UA", "UA", NULL},
     {cJSON_Number, sizeof(uint16_t), "gst", "gst", NULL},
@@ -53,6 +59,15 @@ static json_tmpl_t dashboard_as_info_upd_tmpl[] = {
     {cJSON_Invalid, 0, NULL, NULL, NULL}
 };
 
+static json_tmpl_t dashboard_upload_cn_signalling_tmpl[] = {
+    {cJSON_Number, sizeof(uint16_t), "sender", "sender", NULL},
+    {cJSON_Number, sizeof(uint16_t), "receiver", "receiver", NULL},
+    {cJSON_Number, sizeof(uint8_t), "interface", "interface", NULL},
+    {cJSON_Number, sizeof(uint8_t), "signalling", "signalling", NULL},
+    {cJSON_Invalid, 0, NULL, NULL, NULL}
+};
+
+
 json_tmpl_desc_t dashboard_data_tmpl_desc = {
     .desc = "DASHBOARD_DATA",
     .tmpl = dashboard_data_tmpl,
@@ -69,6 +84,12 @@ json_tmpl_desc_t dashboard_register_gs_tmpl_desc = {
     .desc = "DASHBOARD_REGISTER_GS",
     .tmpl = dashboard_register_gs_tmpl,
     .size = sizeof(dashboard_register_gs_t)
+};
+
+json_tmpl_desc_t dashboard_register_cn_tmpl_desc = {
+    .desc = "DASHBOARD_REGISTER_CN",
+    .tmpl = dashboard_register_cn_tmpl,
+    .size = sizeof(dashboard_register_cn_t)
 };
 
 json_tmpl_desc_t dashboard_switch_as_tmpl_desc = {
@@ -95,6 +116,12 @@ static json_tmpl_desc_t dashboard_as_info_upd_tmpl_desc = {
     .size = sizeof(dashboard_as_info_upd_t)
 };
 
+static json_tmpl_desc_t dashboard_upload_cn_signalling_tmpl_desc = {
+    .desc = "DASHBOARD_UPLOAD_CN_SIGNALLING",
+    .tmpl = dashboard_upload_cn_signalling_tmpl,
+    .size = sizeof(dashboard_upload_cn_signalling_t)
+};
+
 const dashboard_func_define_t dashboard_func_defines[] = {
     {AS_REGISTER, &dashboard_update_coordinate_tmpl_desc},
     {AS_UPDATE_COORDINATE, &dashboard_update_coordinate_tmpl_desc},
@@ -103,7 +130,11 @@ const dashboard_func_define_t dashboard_func_defines[] = {
     {DASHBOARD_SWITCH_AS, &dashboard_switch_as_tmpl_desc},
     {AS_GS_RECEIVED_MSG, &dashboard_received_msg_tmpl_desc},
     {GS_ACCESS_AS, &dashboard_as_info_upd_tmpl_desc},
-    {GS_AS_EXITED, &dashboard_as_exit_tmpl_desc}
+    {GS_AS_EXITED, &dashboard_as_exit_tmpl_desc},
+    {DASHBOARD_SEND_SINGLE_DATA, NULL},
+    {DASHBOARD_SEND_MULTI_DATA, NULL},
+    {CN_REGISTER, &dashboard_register_cn_tmpl_desc},
+    {CN_SIGNALLING, &dashboard_upload_cn_signalling_tmpl_desc},
 };
 
 void *dashboard_conn_connect(net_ctx_t *ctx, char *remote_addr, int remote_port, int local_port) {

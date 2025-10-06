@@ -28,8 +28,12 @@ typedef enum {
     GS_AS_EXITED,
     DASHBOARD_SEND_SINGLE_DATA,
     DASHBOARD_SEND_MULTI_DATA,
+    CN_REGISTER,
+    CN_SIGNALLING,
 
-    STOP_AS = 0xFF,
+
+    UNREGISTER_AS = 0xFE,
+    UNREGISTER_GS = 0xFF,
 }DASHBOARD_FUNCTION;
 
 typedef struct dashboard_func_define_s{
@@ -56,6 +60,11 @@ typedef struct dashboard_register_gs_s {
     double latitude;
 }dashboard_register_gs_t;
 
+typedef struct dashboard_register_cn_s {
+    uint8_t type;
+    uint16_t element;
+}dashboard_register_cn_t;
+
 typedef struct dashboard_switch_as_s {
     uint32_t UA;
     uint16_t GST_SAC;
@@ -78,6 +87,13 @@ typedef struct dashboard_as_info_upd_s {
     uint16_t AS_SAC;
     uint16_t GS_SAC;
 }dashboard_as_info_upd_t;
+
+typedef struct dashboard_upload_cn_signalling_s {
+    uint16_t sender;
+    uint16_t receiver;
+    uint8_t interface;
+    uint8_t signalling;
+}dashboard_upload_cn_signalling_t;
 #pragma pack()
 
 extern json_tmpl_desc_t dashboard_data_tmpl_desc;
