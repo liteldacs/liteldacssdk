@@ -31,7 +31,7 @@ typedef enum {
     CN_REGISTER,
     CN_SIGNALLING,
     DASHBOARD_GET_CN_DATA,
-
+    CN_SET_CN_DATA,
 
     UNREGISTER_AS = 0xFE,
     UNREGISTER_GS = 0xFF,
@@ -95,6 +95,15 @@ typedef struct dashboard_upload_cn_signalling_s {
     uint8_t interface;
     uint8_t signalling;
 }dashboard_upload_cn_signalling_t;
+
+typedef struct dashboard_get_cn_data_s {
+    uint16_t SAC;
+}dashboard_get_cn_data_t;
+
+typedef struct dashboard_set_cn_data_s {
+    cJSON *infos[128];
+    size_t info_size;
+}dashboard_set_cn_data_t;
 #pragma pack()
 
 extern json_tmpl_desc_t dashboard_data_tmpl_desc;
