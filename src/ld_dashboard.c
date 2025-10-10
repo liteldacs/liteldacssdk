@@ -77,6 +77,11 @@ static json_tmpl_t dashboard_set_cn_data_tmpl[] = {
     {cJSON_Invalid, 0, NULL, NULL, NULL}
 };
 
+static json_tmpl_t dashboard_accelerate_as_tmpl[] = {
+    {cJSON_Number, sizeof(uint8_t), "multiplier", "multiplier", NULL},
+    {cJSON_Invalid, 0, NULL, NULL, NULL}
+};
+
 json_tmpl_desc_t dashboard_data_tmpl_desc = {
     .desc = "DASHBOARD_DATA",
     .tmpl = dashboard_data_tmpl,
@@ -143,6 +148,12 @@ static json_tmpl_desc_t dashboard_set_cn_data_tmpl_desc = {
     .size = sizeof(dashboard_set_cn_data_t)
 };
 
+static json_tmpl_desc_t dashboard_accelerate_as_tmpl_desc = {
+    .desc = "DASHBOARD_ACCELERATE_AS",
+    .tmpl = dashboard_accelerate_as_tmpl,
+    .size = sizeof(dashboard_accelerate_as_t)
+};
+
 const dashboard_func_define_t dashboard_func_defines[] = {
     {AS_REGISTER, &dashboard_update_coordinate_tmpl_desc},
     {AS_UPDATE_COORDINATE, &dashboard_update_coordinate_tmpl_desc},
@@ -158,6 +169,7 @@ const dashboard_func_define_t dashboard_func_defines[] = {
     {CN_SIGNALLING, &dashboard_upload_cn_signalling_tmpl_desc},
     {DASHBOARD_GET_CN_DATA, &dashboard_get_cn_data_tmpl_desc},
     {CN_SET_CN_DATA, &dashboard_set_cn_data_tmpl_desc},
+    {DASHBOARD_ACCELRATE_AS, &dashboard_accelerate_as_tmpl_desc}
 };
 
 void *dashboard_conn_connect(net_ctx_t *ctx, char *remote_addr, int remote_port, int local_port) {
