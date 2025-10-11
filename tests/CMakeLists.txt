@@ -3,49 +3,7 @@ project(ldacs_test C)
 
 set(CMAKE_C_STANDARD 11)
 set(tests
-#        json
-#        aqueue
-#        #        stateMachine
-##        multitimer
-#        #        crc
-##                buffer
-#        #        pbs
-#        #        pqueue
-##        base64
-#        #        mqueue
-##        queue
-#        #        map
-#        #        libevent
-##        globaltimer
-#        #        list
-#        #        file
-#        #        http
-#        #        http_sse
-#        #        sqlite
-#        #        crypto
-#        sql
-#        ui
-#        event_server
-#        event_client
-#        bitset
-#        drr
-#        rbuffer
-##        rkeygen
-#        test
-#        mps
-#        ntp
-#        timerfd
-#        hashmap
-#        ipv6addr
-#        coredump
-#        env
-#        str
-#        yaml
-#        ipv6pkt
-#        multiprocess
-#        ipv6
-#        net
-#        env
+        sqlite
         process
 )
 

@@ -33,6 +33,8 @@ typedef enum {
     DASHBOARD_GET_CN_DATA,
     CN_SET_CN_DATA,
     DASHBOARD_ACCELRATE_AS,
+    DASHBOARD_QUERY_KEYS,
+    AS_GS_QUERY_KEYS,
 
     UNREGISTER_AS = 0xFE,
     UNREGISTER_GS = 0xFF,
@@ -105,6 +107,24 @@ typedef struct dashboard_set_cn_data_s {
     cJSON *infos[128];
     size_t info_size;
 }dashboard_set_cn_data_t;
+
+static void free_set_cn_data(dashboard_set_cn_data_t *data) {
+    for (int i = 0; i < data->info_size; i++) {
+        cJSON_free(data->infos[i]);
+    }
+}
+
+#define KEY_MAX 200
+typedef struct dashboard_query_keys_s {
+    cJSON *j_keys[KEY_MAX+1];
+    size_t key_count;
+}dashboard_query_keys_t;
+
+static void free_query_data_data(dashboard_query_keys_t *keys) {
+    for (int i = 0; i < keys->key_count; i++) {
+        cJSON_free(keys->j_keys[i]);
+    }
+}
 
 typedef struct dashboard_accelerate_as_s {
     uint8_t multiplier;

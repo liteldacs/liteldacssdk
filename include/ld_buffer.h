@@ -42,7 +42,6 @@ void free_buffer(void *ptr);
 
 l_err change_buffer_len(buffer_t *buf, size_t valid_len);
 
-
 //TODO: 如果ch之前ptr指针不为空，则会造成内存泄漏，需解决
 //按长度克隆
 //不clear掉之前的buffer则会导致内存泄漏
@@ -55,6 +54,13 @@ l_err change_buffer_len(buffer_t *buf, size_t valid_len);
         (ch).total  = (size);\
         /* (ch).ptr_null = FALSE; */\
     }
+
+#define CLONE_BY_CHARS(ch, src)                                     \
+{                                                                   \
+    CLONE_TO_CHUNK(ch, src, strlen(src))                            \
+}
+
+
 
 //有最大值的按长度克隆
 #define CLONE_TO_CHUNK_L(ch, src, size, total_len)                         \
